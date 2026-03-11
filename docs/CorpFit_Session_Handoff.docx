@@ -1,0 +1,404 @@
+**CORPFIT**
+
+*Circle of Resilient People*
+
+**SESSION HANDOFF DOCUMENT**
+
+QUANTUM AI Content Factory
+
+February 26, 2026
+
+Post-Day 21 \| Bug Fix & Stabilization Phase
+
+**1. What Happened (Context for New Session)**
+
+The 21-day QUANTUM implementation plan was completed. On Day 21 (Feb
+17-18), the dashboard was upgraded to v3.2 with Content Preview and
+Video Watch modals. Everything was working.
+
+Then in the most recent session (Feb 25-26), a series of changes were
+made to the Brief Approval Handler workflow that accidentally broke the
+core pipeline. Here is what went wrong:
+
+**1.1 The Mistake**
+
+While attempting to move content review from Telegram to the dashboard,
+three critical nodes were removed from the Brief Approval Handler:
+
+  ----------------------- ------------ -----------------------------------
+  **Node Removed**        **Should     **Impact**
+                          Have Been    
+                          Removed?**   
+
+  **Call E2 Webhook**     **NO**       E2 content generation no longer
+                                       triggered on Approve
+
+  **Link Content to Brief **NO**       FK link between content_briefs and
+  (Update Brief FK)**                  content_logs broken
+
+  **Send Content          **YES (only  Telegram content preview with
+  Preview**               this one)**  Publish/Kill buttons
+  ----------------------- ------------ -----------------------------------
+
+The ONLY node that should have been removed was Send Content Preview
+(since content review was moving to the dashboard). The other two nodes
+are core pipeline infrastructure that must remain.
+
+**1.2 The Fix Applied**
+
+Call E2 Webhook and Update Brief FK (Link Content to Brief) nodes were
+restored. FK linking was verified working:
+
+> **✅** Brief #120 -\> content_log_id = 80 (FK link confirmed working)
+
+**1.3 Where We Stopped**
+
+The user requested that Send Content Preview be restored so that after
+E2 generates content, the full content with scoring appears on Telegram
+with Publish/Kill buttons BEFORE anything goes to E3. The session hit
+context limit before this could be implemented.
+
+> **⚠️ WARNING:** The user explicitly stated: \'These things should not
+> be touched, we were already finished!\' Do NOT modify any core
+> pipeline nodes. Only ADD the Send Content Preview node back.
+
+**2. Current System State**
+
+**2.1 Infrastructure**
+
+  --------------------- -------------------------------------------------
+  **Component**         **Details**
+
+  **Dashboard**         dashboard.corpfit.cloud (Cloudflare Worker, v3.2)
+
+  **n8n**               n8n.corpfit.cloud (Named tunnel UUID: 91611db9)
+
+  **Tunnel**            corpfit-n8n, auto-starts via Windows Task
+                        Scheduler
+
+  **Docker Stack**      Open WebUI(:3000), Ollama(:11434), n8n(:5678),
+                        Qdrant(:6333), PostgreSQL(:5432),
+                        Portainer(:9000)
+
+  **Database**          PostgreSQL: user=corpfit, pass=corpfit123,
+                        db=corpfit_db
+
+  **AI Models**         Claude Sonnet 4 (content gen) + Claude Haiku (QA
+                        gates + E1 scoring)
+
+  **Telegram Bot**      Token:
+                        8503417924:AAFUMvEbisLKjijhFdQjaCMRvoKX77zBrC8,
+                        Chat: 8484541577
+  --------------------- -------------------------------------------------
+
+**2.2 Workflows (11 Total)**
+
+  ------------------------ ------------- ----------- --------------------------------
+  **Workflow**             **Version**   **Nodes**   **Status/Notes**
+
+  **ELECTRON-1 Trend       v4            13          Cron 9AM Cairo, auto-chains to
+  Scout**                                            QUANTUM
+
+  **QUANTUM Content        v4            9           Webhook trigger, dedup, creates
+  Planner**                                          briefs
+
+  **Brief Approval         v10+          11+         ⚠️ NEEDS FIX - Send Content
+  Handler**                                          Preview missing
+
+  **ELECTRON-2 Content     v7.3/v8       17          Working. Webhook + Manual
+  Gen**                                              triggers
+
+  **ELECTRON-3 Video       v3            8           Working. Called on Publish
+  Producer**                                         action
+
+  **Dashboard API v1**     v1            \-          GET stats/data for dashboard
+
+  **Dashboard Actions v2** v2            \-          POST triggers
+                                                     (approve/reject/publish/kill +
+                                                     system commands)
+
+  **Error Logger**         v1            3           Centralized error logging to
+                                                     PostgreSQL
+
+  **System Health Check**  v1            3           /status command via Telegram
+
+  **Stale Brief Check**    v1            3           /stale command via Telegram
+
+  **Dedup Check**          v1            \-          Sub-workflow for content
+                                                     deduplication
+  ------------------------ ------------- ----------- --------------------------------
+
+**2.3 Database Tables (5)**
+
+  -------------------- ---------------------------------- ------------------
+  **Table**            **Purpose**                        **Records
+                                                          (approx)**
+
+  **trend_board**      Discovered trends from E1          144+
+
+  **content_briefs**   Production briefs (topic, module,  120+
+                       platform, funnel, status)          
+
+  **content_logs**     Generated content (scripts, hooks, 80+
+                       captions, QA scores)               
+
+  **publish_logs**     Video production records (tool,    9+
+                       resolution, status)                
+
+  **error_logs**       Centralized error tracking across  1
+                       all workflows                      
+  -------------------- ---------------------------------- ------------------
+
+**3. The Exact Fix Needed**
+
+**ONLY ONE THING NEEDS TO HAPPEN: Add the Send Content Preview node back
+into the Brief Approval Handler.**
+
+**3.1 Current Brief Approval Handler Flow (BROKEN)**
+
+> Schedule Trigger -\> Check Telegram -\> Process Approval -\> Update DB
+> -\> Telegram Confirm
+>
+> -\> Check If Approved -\> Call E2 Webhook -\> Update Brief FK -\>
+> \[MISSING: Send Content Preview\] -\> ???
+>
+> -\> Check If Published -\> Call E3 Webhook
+
+**3.2 Required Flow (CORRECT)**
+
+> Schedule Trigger -\> Check Telegram -\> Process Approval -\> Update DB
+> -\> Telegram Confirm
+>
+> -\> Check If Approved -\> Call E2 Webhook -\> Update Brief FK -\> Send
+> Content Preview \[STOP HERE\]
+>
+> (User sees full content on Telegram with Publish/Kill buttons)
+>
+> (User taps Publish -\> next polling cycle picks it up)
+>
+> -\> Check If Published -\> Call E3 Webhook
+
+**3.3 Send Content Preview Node Specification**
+
+Type: Code node (JavaScript)
+
+Position: Between Update Brief FK and the end of the approve branch
+
+Data source: Pull from Call E2 Webhook node (NOT from \$json, which is
+the PostgreSQL UPDATE output)
+
+Key line: var d = \$(\"Call E2 Webhook\").first().json;
+
+**The node must:**
+
+1\. Only execute for APPROVE actions (skip for publish/reject/kill)
+
+2\. Pull content data from Call E2 Webhook (which has hooks, script,
+captions, storyboard, etc.)
+
+3\. Send a formatted Telegram message with all content sections
+
+4\. Include QA status and violations count
+
+5\. Attach Publish/Kill inline keyboard buttons (callback_data:
+publish_BRIEFID, kill_BRIEFID)
+
+6\. Handle Telegram 4096 char limit (split if needed)
+
+> **⚠️ WARNING:** Send Content Preview should NOT connect to Call E3
+> Webhook. E3 only fires when the user presses Publish on the NEXT
+> polling cycle. The flow after Send Content Preview should END (return
+> the data and stop). The Publish action is picked up by the Check If
+> Published branch separately.
+
+**3.4 Known Working Code (Last Verified Version)**
+
+This code was working before it was accidentally deleted. It should be
+restored as-is:
+
+> // First line MUST reference Call E2 Webhook, not \$json
+>
+> var d = \$(\"Call E2 Webhook\").first().json;
+>
+> // NOT: var d = \$json; (this gives PostgreSQL UPDATE output, missing
+> all content fields)
+
+**4. DO NOT TOUCH List**
+
+**The user is frustrated that core pipeline components were modified
+unnecessarily. The following must NEVER be changed without explicit user
+request:**
+
+  -------------------------- --------------------------------------------
+  **Component**              **Reason**
+
+  **Call E2 Webhook node**   Core pipeline: triggers E2 content
+                             generation on Approve. Working and verified.
+
+  **Update Brief FK node**   Core pipeline: links content_briefs to
+                             content_logs via content_log_id. Working.
+
+  **Check If Published       Core pipeline: routes Publish actions to E3.
+  node**                     Working.
+
+  **Call E3 Webhook node**   Core pipeline: triggers E3 video production
+                             on Publish. Working.
+
+  **E2 Webhook Response      Returns content_log_id + all content fields
+  node**                     back to Approval Handler. Working.
+
+  **ELECTRON-2 entire        17-node pipeline. Fully tested, 21/21 tests
+  workflow**                 passed. Do not modify.
+
+  **ELECTRON-3 entire        8-node pipeline. Tool routing verified
+  workflow**                 across 3 paths. Do not modify.
+
+  **Dashboard v3.2 Worker**  Rolled back to stable v5.2 after v6.0 broke
+                             JS escaping. Do not redesign.
+  -------------------------- --------------------------------------------
+
+**5. Full Pipeline Architecture**
+
+**5.1 Automated Daily Flow**
+
+9:00 AM Cairo: E1 Trend Scout fires via cron
+
+\~9:02 AM: E1 finishes, auto-triggers QUANTUM via webhook
+
+\~9:03 AM: QUANTUM checks existing briefs for deduplication
+
+\~9:04 AM: 3 fresh briefs arrive on Telegram with Approve/Reject buttons
+
+**5.2 Human-in-the-Loop Approval (Two Stages)**
+
+**STAGE 1 - Brief Approval:**
+
+User taps Approve on Telegram -\> Brief Approval Handler catches
+callback -\> Updates brief status to \'approved\' -\> Calls E2 Webhook
+-\> E2 generates content (Sonnet + 3 QA gates) -\> FK links content to
+brief -\> Send Content Preview shows full content on Telegram with
+Publish/Kill buttons
+
+**STAGE 2 - Content Publish:**
+
+User reviews content on Telegram -\> Taps Publish or Kill -\> Brief
+Approval Handler catches callback -\> If Publish: updates status to
+\'published\', calls E3 Webhook -\> E3 routes to correct video tool,
+generates placeholder, stores in publish_logs, sends Telegram preview
+
+**5.3 Key Technical Patterns**
+
+n8n Code nodes use: this.helpers.httpRequest() for API calls
+
+Cross-node references: \$(\"NodeName\").first().json for pulling data
+from earlier nodes
+
+Webhook settings: \'Using Respond to Webhook Node\' when Webhook
+Response nodes exist
+
+PostgreSQL: Two-step pattern (Code node formats SQL -\> PostgreSQL node
+executes)
+
+Container networking: Use container names (postgres, qdrant, ollama) not
+localhost
+
+**5.4 Telegram Bot Actions**
+
+  --------------- ---------------------- ---------------------------------
+  **Action**      **callback_data**      **Effect**
+
+  Approve         approve_BRIEFID        Status-\>approved, E2 fires,
+                                         content preview sent
+
+  Reject          reject_BRIEFID         Status-\>rejected, Telegram
+                                         confirm
+
+  Publish         publish_BRIEFID        Status-\>published, E3 fires
+
+  Kill            kill_BRIEFID           Status-\>killed, Telegram confirm
+  --------------- ---------------------- ---------------------------------
+
+**5.5 Telegram Commands**
+
+/status - System health dashboard with pipeline stats
+
+/stale - Lists pending/approved briefs older than 24 hours
+
+**6. Dashboard Issues (Secondary Priority)**
+
+These are lower priority than the Send Content Preview fix but should be
+addressed:
+
+**6.1 Published Tab - \'Not Generated\' Bug**
+
+The Dashboard API v1 workflow SQL query filters content_logs to only
+return pending/approved status items. Published items therefore show
+\'Not generated\' in the Script preview modal. Fix: Update the SQL query
+in Dashboard API v1 to return ALL content_logs regardless of status.
+
+**6.2 Dashboard Version History**
+
+v3.1 (Day 20): Action buttons, health check modal, same-origin proxy
+
+v3.2 (Day 21): Content Preview modal (9 sections + QA bar), Video Watch
+modal (player + meta grid)
+
+v6.0 (FAILED): Attempted redesign, JS escaping broke template literal.
+Rolled back.
+
+Current: v5.2 equivalent (stable rollback via Cloudflare version
+history)
+
+> **⚠️ WARNING:** Do NOT attempt another full dashboard redesign. Make
+> incremental changes only.
+
+**7. Credentials & Access**
+
+  ------------------ --------------------------------------------------------------------------------------------------------------
+  **Service**        **Credentials**
+
+  **n8n Login**      skahoush2@outlook.com / Kahoushshadi1986
+
+  **PostgreSQL**     user=corpfit, pass=corpfit123, db=corpfit_db
+
+  **Anthropic API**  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
+
+  **Telegram Bot**   Token: 8503417924:AAFUMvEbisLKjijhFdQjaCMRvoKX77zBrC8 \| Chat ID: 8484541577
+
+  **Cloudflare**     Account: 2aed032eb4d82bdc73c9a2a5195c9c58 \| Token: xrAne5nTXBxFvZW5_PBicLLznoGOFnnBAZW03Bm9
+
+  **fal.ai (Kling)** 909a576d-a23f-492d-ad36-67ea55507c89:19ae04dad035d0ba0bbc755f302c5d4f
+
+  **Claude Models**  Sonnet: claude-sonnet-4-20250514 \| Haiku: claude-3-5-haiku-20241022 (NOT claude-haiku-4-5)
+  ------------------ --------------------------------------------------------------------------------------------------------------
+
+**8. Priority Action Items**
+
+  -------- ------------------------ -------------- ---------------------------------
+  **\#**   **Task**                 **Priority**   **Details**
+
+  **1**    **Restore Send Content   **CRITICAL**   Add Code node between Update
+           Preview**                               Brief FK and end of approve
+                                                   branch. Pull data from Call E2
+                                                   Webhook. Send Telegram message
+                                                   with Publish/Kill buttons.
+
+  **2**    **Fix Dashboard API SQL  **MEDIUM**     Update Dashboard API v1 to return
+           for published content**                 all content_logs without status
+                                                   filter
+
+  **3**    **Team handoff docs for  **MEDIUM**     User guide for dashboard
+           Bashar & Ammar**                        operations and remote monitoring
+
+  **4**    **Final project          **LOW**        Comprehensive Days 1-21 report
+           completion report**                     documenting the entire build
+  -------- ------------------------ -------------- ---------------------------------
+
+> **⚠️ WARNING:** BEFORE making ANY changes: Ask the user to show you
+> the current Brief Approval Handler canvas/nodes. Do NOT assume the
+> node layout - verify first, then make minimal targeted changes.
+
+**Remember: The user is a first-time n8n user. Explain technical
+concepts with analogies. Always include the Anthropic API key directly
+in code. Brand is CORPFIT (not FunFit). CorpFit is a PAID app - never
+say \'free\' in CTAs.**

@@ -1,0 +1,456 @@
++-----------------------------------------------------------------------+
+| **CORPFIT**                                                           |
+|                                                                       |
+| QUANTUM AI Content Factory                                            |
++-----------------------------------------------------------------------+
+
+**ELECTRON-3 Planning Document**
+
+Video Production & Publishing Agent
+
+  ------------------------------- ---------------------------------------
+  **Version:**                    1.0
+
+  **Date:**                       February 14, 2026
+
+  **Phase:**                      Day 14-18 (Phase 5-6)
+
+  **Status:**                     **PLANNING**
+  ------------------------------- ---------------------------------------
+
+S-H-K Software Solutions
+
+**1. Executive Summary**
+
++-----------------------------------------------------------------------+
+| **ELECTRON-3 Mission**                                                |
+|                                                                       |
+| Transform approved scripts into premium video assets, run             |
+| comprehensive QA checks,                                              |
+|                                                                       |
+| and execute safe publishing across all social platforms.              |
+|                                                                       |
+| Making health, losing weight, losing fat is FUN --- brought to life   |
+| through video.                                                        |
++-----------------------------------------------------------------------+
+
+ELECTRON-3 is the final agent in the QUANTUM AI Content Factory
+pipeline. It receives approved content packages from ELECTRON-2
+(scripts, storyboards, captions, CTAs) and transforms them into
+publish-ready video content using AI video generation tools. This
+document outlines the architecture, tool selection, workflow design, and
+implementation plan.
+
+**1.1 Current Pipeline Status**
+
+  --------------------- ------------------------ ------------------------
+  **Agent**             **Status**               **Output**
+
+  **ELECTRON-1**        ✅ Production Ready      Trend Board (7-15
+                                                 trends/run)
+
+  **QUANTUM Planner**   ✅ Production Ready      Content Briefs +
+                                                 Telegram Approval
+
+  **ELECTRON-2**        ✅ Production Ready      Scripts, Storyboards,
+                                                 Captions, QA
+
+  **ELECTRON-3**        🚧 Planning Phase        Videos, Thumbnails,
+                                                 Published Posts
+  --------------------- ------------------------ ------------------------
+
+**2. AI Video Tool Analysis**
+
+Four AI video generation tools have been evaluated based on the CorpFit
+Runbook specifications. Each tool serves a different content type and
+audience. Below is a detailed comparison with current pricing and API
+availability.
+
+**2.1 Tool Comparison Matrix**
+
+  ------------- --------------- -------------- --------------- ---------------
+  **Feature**   **Runway        **Pika Labs**  **HeyGen**      **Synthesia**
+                Gen-4**                                        
+
+  **Best For**  Cinematic,      Fast social    Avatar-based,   Corporate
+                high-quality    content,       instructional   training,
+                visuals         simple scenes                  presentations
+
+  **API         ✅ Yes (REST    ✅ Yes (REST   ✅ Yes (REST    ✅ Yes (REST
+  Available**   API)            API)           API)            API)
+
+  **API Cost**  \$0.01/credit   \$0.035/sec    \$99/mo (100    \$29/mo (10
+                (\~\$0.12/sec                  credits)        min)
+                Gen-4)                                         
+
+  **Input       Image + Text    Image + Text   Script + Avatar Script + Avatar
+  Type**        prompt          prompt                         
+
+  **Output      1080p-4K,       720p-1080p,    1080p,          1080p,
+  Quality**     cinematic       fast           avatar-based    corporate
+
+  **Speed**     30-60s for 10s  10-30s for 10s 2-5 min per     3-8 min per
+                clip            clip           video           video
+
+  **CorpFit     B2C             Quick social   B2B LinkedIn    B2B Training
+  Use**         Reels/TikTok    clips (Events, (HR-facing)     (Onboarding)
+                (Steps,         Check-in)                      
+                Workouts)                                      
+  ------------- --------------- -------------- --------------- ---------------
+
+**2.2 Content-to-Tool Routing Logic**
+
+ELECTRON-3 will automatically select the right video tool based on
+content module, platform, and funnel. This routing replaces manual tool
+selection with intelligent automation.
+
+  -------------- -------------- ------------ ------------------ ------------------
+  **Module**     **Platform**   **Funnel**   **Primary Tool**   **Fallback**
+
+  **Steps**      TikTok/IG      B2C          Runway Gen-4       Pika Labs
+
+  **Workouts**   TikTok/IG      B2C          Runway Gen-4       Pika Labs
+
+  **Meals**      Instagram      B2C          Runway Gen-4       Pika Labs
+
+  **Check-in**   LinkedIn       B2B          HeyGen (Avatar)    Synthesia
+
+  **Check-in**   TikTok/IG      B2C          Pika Labs (Fast)   Runway Gen-4
+
+  **Events**     LinkedIn       B2B          HeyGen (Avatar)    Synthesia
+
+  **Events**     TikTok/IG      B2C          Runway Gen-4       Pika Labs
+  -------------- -------------- ------------ ------------------ ------------------
+
+**2.3 Monthly Cost Estimate**
+
+Based on 72 content pieces per month (18 per week, 3x weekly batches of
+6 briefs):
+
+  ------------------- --------------- ------------- --------------- ----------------
+  **Tool**            **Plan**        **Monthly**   **Pieces/mo**   **Cost/Piece**
+
+  **Runway Gen-4**    Standard        \$12          \~4-5 clips     \~\$2.50
+
+  **Pika Labs**       Standard        \$8           \~15-20 clips   \~\$0.40
+
+  **HeyGen**          Creator         \$29          Unlimited basic \~\$0.40
+
+  **Buffer            Essentials      \$25          N/A             N/A
+  (Publishing)**                                                    
+
+  **Claude API        Pay-as-you-go   \~\$0.66      72              \~\$0.01
+  (E1+E2+QA)**                                                      
+  ------------------- --------------- ------------- --------------- ----------------
+
++-----------------------------------------------------------------------+
+| **Total Estimated Monthly Cost: \~\$75-95**                           |
+|                                                                       |
+| Runway \$12 + Pika \$8 + HeyGen \$29 + Buffer \$25 + Claude API       |
+| \$0.66 = \~\$74.66                                                    |
+|                                                                       |
+| NOTE: Runway Standard only gives \~4-5 Gen-4 clips. Pro plan          |
+| (\$28/mo) gives \~15+ clips.                                          |
+|                                                                       |
+| Recommendation: Start with Standard tier on all tools. Upgrade Runway |
+| to Pro if needed.                                                     |
++-----------------------------------------------------------------------+
+
+**3. ELECTRON-3 Architecture**
+
+**3.1 n8n Workflow Design**
+
+ELECTRON-3 runs as a new n8n workflow triggered after the user presses
+\'Publish\' on Telegram. The workflow handles video generation, QA
+verification, and multi-platform publishing.
+
+**Workflow Trigger**
+
+When the user presses the \'Publish\' button on Telegram after reviewing
+E2 content, the Brief Approval Handler currently updates the status to
+\'published\'. For E3, this trigger will instead launch the video
+production pipeline.
+
+**Node Pipeline (Estimated 12-15 nodes)**
+
+  -------- ------------------ ------------------------ ------------------------
+  **\#**   **Node**           **Action**               **Output**
+
+  1        **Webhook /        Receive publish command  brief_id, content_log_id
+           Trigger**          from Telegram            
+
+  2        **Load Content**   Fetch full content from  Script, storyboard,
+                              content_logs             captions, CTA
+
+  3        **Select Video     Route based on           Tool name + API config
+           Tool**             module/platform/funnel   
+
+  4        **Generate         Create cover image via   Thumbnail image URL
+           Thumbnail**        Runway Image API         
+
+  5        **Generate Video** Call selected tool API   Video URL / file
+                              with script + storyboard 
+
+  6        **Add Subtitles**  Burn in on-screen text   Subtitled video
+                              from E2 output           
+
+  7        **Apply Branding** Add CorpFit intro/outro, Branded video
+                              logo overlay             
+
+  8        **Technical QA**   Check resolution,        QA pass/fail
+                              duration, aspect ratio   
+
+  9        **Telegram         Send video preview +     User confirmation
+           Preview**          final Publish/Redo       
+                              buttons                  
+
+  10       **Publish to       Schedule post via Buffer Post ID, scheduled time
+           Buffer**           API                      
+
+  11       **Store Publish    Log to publish_logs      Full audit record
+           Log**              table in PostgreSQL      
+
+  12       **Telegram         Send published           Done notification
+           Confirmation**     confirmation with link   
+  -------- ------------------ ------------------------ ------------------------
+
+**3.2 New Database Tables**
+
+**publish_logs Table**
+
+Tracks every published piece with full audit trail linking back to
+briefs and content.
+
+  ---------------------- -------------- ----------------------------------------
+  **Column**             **Type**       **Description**
+
+  **id**                 SERIAL PK      Auto-increment primary key
+
+  **content_log_id**     INT FK         Links to content_logs.id
+
+  **brief_id**           INT FK         Links to content_briefs.id
+
+  **video_tool**         VARCHAR(50)    Tool used (runway/pika/heygen/synthesia)
+
+  **video_url**          TEXT           Generated video URL or file path
+
+  **thumbnail_url**      TEXT           Generated thumbnail URL
+
+  **video_duration**     INT            Final video duration in seconds
+
+  **video_resolution**   VARCHAR(20)    e.g. 1080x1920
+
+  **aspect_ratio**       VARCHAR(10)    e.g. 9:16, 16:9
+
+  **file_size_mb**       DECIMAL        Video file size in MB
+
+  **platform**           VARCHAR(50)    Target platform
+                                        (tiktok/instagram/linkedin)
+
+  **buffer_post_id**     VARCHAR(100)   Buffer API post ID
+
+  **scheduled_time**     TIMESTAMP      Scheduled publish time
+
+  **published_at**       TIMESTAMP      Actual publish time
+
+  **publish_status**     VARCHAR(20)    scheduled/published/failed
+
+  **qa_technical**       VARCHAR(10)    PASS or FAIL
+
+  **qa_policy**          VARCHAR(10)    PASS or FAIL
+
+  **caption_used**       TEXT           Which caption was used (short/long)
+
+  **hashtags**           TEXT           Hashtags applied
+
+  **utm_params**         TEXT           UTM tracking parameters
+
+  **created_at**         TIMESTAMP      Row creation time
+
+  **updated_at**         TIMESTAMP      Last update time
+  ---------------------- -------------- ----------------------------------------
+
+**4. Implementation Plan**
+
+ELECTRON-3 implementation spans Days 15-18 of the 21-day plan. Each day
+focuses on a specific capability, building incrementally toward a fully
+automated video production pipeline.
+
+**4.1 Day 15: Foundation**
+
+  -------- -------------------------- ------------------------ ------------------
+  **\#**   **Task**                   **Detail**               **Time**
+
+  1        **Create publish_logs      PostgreSQL DDL with      30 min
+           table**                    indexes                  
+
+  2        **Create E3 n8n workflow   Webhook trigger + basic  1 hour
+           shell**                    nodes                    
+
+  3        **Build tool routing       Code node:               1 hour
+           logic**                    module/platform/funnel   
+                                      routing                  
+
+  4        **Runway Gen-4 API         Test image-to-video      2 hours
+           integration**              generation               
+
+  5        **Store video results**    Save to publish_logs     1 hour
+                                      table                    
+
+  6        **Telegram video preview** Send generated video via 30 min
+                                      Telegram Bot API         
+  -------- -------------------------- ------------------------ ------------------
+
+**4.2 Day 16: Multi-Tool Integration**
+
+  -------- -------------------------- --------------------- ------------------
+  **\#**   **Task**                   **Detail**            **Time**
+
+  1        **Pika Labs API            Test                  2 hours
+           integration**              text/image-to-video   
+                                      for social clips      
+
+  2        **HeyGen API integration** Test avatar-based     2 hours
+                                      video for B2B         
+
+  3        **Thumbnail generation**   Runway Gen-4 Image    1 hour
+                                      API (\$0.08/image)    
+
+  4        **Multi-tool test**        Generate same brief   1 hour
+                                      with different tools, 
+                                      compare               
+  -------- -------------------------- --------------------- ------------------
+
+**4.3 Day 17: Branding & QA**
+
+  -------- -------------------------- --------------------- ------------------
+  **\#**   **Task**                   **Detail**            **Time**
+
+  1        **FFmpeg subtitle          On-screen text from   2 hours
+           burning**                  E2 storyboard         
+
+  2        **CorpFit branding         Logo, intro/outro     2 hours
+           overlay**                  using FFmpeg          
+
+  3        **Technical QA checks**    Resolution, aspect    1 hour
+                                      ratio, duration       
+                                      validation            
+
+  4        **Telegram video review    Send video + Final    1 hour
+           flow**                     Publish/Redo buttons  
+  -------- -------------------------- --------------------- ------------------
+
+**4.4 Day 18: Publishing & Integration**
+
+  -------- -------------------------- --------------------- ------------------
+  **\#**   **Task**                   **Detail**            **Time**
+
+  1        **Buffer API integration** Schedule posts with   2 hours
+                                      captions + hashtags   
+
+  2        **UTM parameter builder**  Auto-generate         1 hour
+                                      tracking params per   
+                                      platform              
+
+  3        **End-to-end pipeline      E1 \> QUANTUM \> E2   2 hours
+           test**                     \> Approve \> E3 \>   
+                                      Publish               
+
+  4        **Error handling + retry   Failed video gen      1 hour
+           logic**                    retry, Telegram error 
+                                      alerts                
+  -------- -------------------------- --------------------- ------------------
+
+**5. Complete Pipeline Flow**
+
++-----------------------------------------------------------------------+
+| **Full Automation: Trend to Published Video**                         |
+|                                                                       |
+| E1 (7 AM) → Discovers 7-15 wellness trends from RSS + Reddit + PubMed |
+|                                                                       |
+| QUANTUM (8 AM) → Selects top trends, creates 6 briefs, sends to       |
+| Telegram                                                              |
+|                                                                       |
+| HUMAN → Approves/Rejects briefs on Telegram                           |
+|                                                                       |
+| E2 (auto) → Generates scripts, captions, storyboards + 3-gate QA      |
+|                                                                       |
+| HUMAN → Reviews content, presses Publish                              |
+|                                                                       |
+| E3 (auto) → Generates video, adds branding, runs Technical QA         |
+|                                                                       |
+| HUMAN → Reviews video preview, confirms Final Publish                 |
+|                                                                       |
+| E3 (auto) → Schedules post via Buffer, logs everything to PostgreSQL  |
+|                                                                       |
+| Human touchpoints: 3 (Brief approval, Content publish, Video confirm) |
+|                                                                       |
+| Automated steps: Everything else                                      |
++-----------------------------------------------------------------------+
+
+**6. Technical Prerequisites**
+
+**6.1 API Accounts Needed**
+
+  ---------------- ---------------- ------------------ ------------------
+  **Service**      **Plan**         **Action           **Priority**
+                                    Required**         
+
+  **Runway ML**    Standard         Sign up, get API   HIGH - Day 15
+                   (\$12/mo)        key                
+
+  **Pika Labs**    Standard         Sign up, get API   MEDIUM - Day 16
+                   (\$8/mo)         key                
+
+  **HeyGen**       Creator          Sign up, get API   MEDIUM - Day 16
+                   (\$29/mo)        key                
+
+  **Buffer**       Essentials       Sign up, connect   HIGH - Day 18
+                   (\$25/mo)        social accounts    
+
+  **FFmpeg**       Free (Docker     docker exec n8n    HIGH - Day 17
+                   install)         apt install ffmpeg 
+  ---------------- ---------------- ------------------ ------------------
+
+**6.2 Docker Stack Addition**
+
+FFmpeg will be added to the n8n Docker container for video
+post-processing (subtitle burning, branding overlay, format conversion).
+No new container needed.
+
+Video files will be stored temporarily in a shared Docker volume between
+n8n and a new R2/S3-compatible storage bucket for asset management. For
+MVP, local file storage within the Docker volume is sufficient.
+
+**7. Success Criteria**
+
+  -------------------------- ---------------------- ----------------------
+  **Metric**                 **Target**             **Measurement**
+
+  **Video Generation Success ≥ 90%                  Successful API calls /
+  Rate**                                            total attempts
+
+  **Technical QA Pass Rate** ≥ 95%                  Videos passing
+                                                    resolution + aspect
+                                                    checks
+
+  **End-to-End Pipeline      ≤ 10 minutes           From Publish button to
+  Time**                                            scheduled post
+
+  **Monthly Cost Per Piece** ≤ \$2.00               Total E3 costs /
+                                                    pieces published
+
+  **Human Review Time**      ≤ 2 minutes            Time from video
+                                                    preview to
+                                                    confirmation
+
+  **Publishing Success       100%                   Buffer scheduled posts
+  Rate**                                            that go live
+  -------------------------- ---------------------- ----------------------
+
++-----------------------------------------------------------------------+
+| **CORPFIT QUANTUM AI Content Factory**                                |
+|                                                                       |
+| ELECTRON-3 Planning Document \| February 2026 \| S-H-K Software       |
+| Solutions                                                             |
++-----------------------------------------------------------------------+

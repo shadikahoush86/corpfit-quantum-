@@ -1,0 +1,1108 @@
+**CORPFIT**
+
+*Circle of Resilient People*
+
+  -----------------------------------------------------------------------
+
+  -----------------------------------------------------------------------
+
+**ELECTRON-2 Content Generator**
+
+**n8n WORKFLOW DOCUMENTATION**
+
+10-Node RAG-Enhanced Pipeline \| Version 4 (Day 6)
+
++-----------------+-----------------+-----------------+-----------------+
+| **10**          | **10/10**       | **\$0.005**     | **28**          |
+|                 |                 |                 |                 |
+| **PIPELINE      | **TESTS         | **PER CONTENT   | **DB COLUMNS**  |
+| NODES**         | PASSED**        | PIECE**         |                 |
++-----------------+-----------------+-----------------+-----------------+
+
+  -----------------------------------------------------------------------
+  **Field**             **Value**
+  --------------------- -------------------------------------------------
+  Workflow Name         ELECTRON-2 Content Generator
+
+  n8n Location          localhost:5678
+
+  Current Version       v4 (10 nodes, RAG + PostgreSQL + Error Handling)
+
+  Primary Model         Claude Sonnet 4 (claude-sonnet-4-20250514)
+
+  Date                  February 6, 2026 \| Day 6 of 21
+
+  Classification        Internal Operations
+  -----------------------------------------------------------------------
+
+**1. Workflow Overview**
+
+The ELECTRON-2 Content Generator is the core content production pipeline
+for the CorpFit QUANTUM AI Content Factory. It takes a production brief
+(topic, platform, module, funnel, duration), retrieves relevant brand
+rules and banned phrases from the Qdrant vector database, assembles a
+hybrid prompt (static core + dynamic knowledge), sends it to Claude
+Sonnet 4, parses the structured output, performs dual-layer safety
+scanning, stores the result in PostgreSQL, and handles errors with retry
+logic.
+
+  -----------------------------------------------------------------------
+  **Parse Brief \> Qdrant Brand Rules \> Qdrant Banned Phrases \>
+  Assemble Prompt \> Claude API \> Parse Output \> Banned Phrase Check \>
+  Store Result \> Error Handler**
+
+  -----------------------------------------------------------------------
+
+**1.1 Workflow Evolution**
+
+  -------------------------------------------------------------------------------
+  **Version**   **Day**   **Nodes**   **Architecture**
+  ------------- --------- ----------- -------------------------------------------
+  v1            Day 3     2           Manual Trigger → HTTP Request (hardcoded
+                                      3,300-word prompt)
+
+  v2            Day 4     6           \+ Parse Brief, Qdrant Brand Rules, Qdrant
+                                      Banned Phrases, Assemble Prompt, Code Node
+                                      API
+
+  v3            Day 5     8           \+ Parse Output (structured JSON) + Banned
+                                      Phrase Check (dual-layer safety)
+
+  **v4**        **Day 6** **10**      **+ Store Result (PostgreSQL) + Error
+                                      Handler (retry logic + graceful fallback)**
+  -------------------------------------------------------------------------------
+
+**1.2 Key Concept: Hybrid RAG Approach**
+
+The workflow uses a hybrid approach with two distinct prompt layers:
+
++-----------------------------------+-----------------------------------+
+| **STATIC CORE (\~1,200 words)**   | **DYNAMIC KNOWLEDGE (from         |
+|                                   | Qdrant)**                         |
+| Hardcoded in Assemble Prompt      |                                   |
+| node. Defines WHO the agent is    | Pulled at runtime from Qdrant     |
+| and HOW it works. Never changes.  | vector DB. Tells WHAT to follow.  |
+|                                   | Changes and grows over time.      |
+| • Agent identity (ELECTRON-2)     |                                   |
+|                                   | • Brand colors, fonts, visual     |
+| • Output format with emoji        | guidelines                        |
+| headers                           |                                   |
+|                                   | • Platform-specific tone rules    |
+| • Workflow steps (Parse \> Plan   |                                   |
+| \> Create \> Check)               | • Module definitions (5 modules)  |
+|                                   |                                   |
+| • Safe framing rules              | • 71 banned phrases               |
++-----------------------------------+-----------------------------------+
+
++-----------------------------------------------------------------------+
+| **ANALOGY**                                                           |
+|                                                                       |
+| The static core is like a chef\'s training and cooking technique      |
+| (doesn\'t change). The dynamic knowledge is like today\'s menu and    |
+| ingredient restrictions (changes regularly). You don\'t retrain the   |
+| chef every time you add a new dish --- you just update the menu.      |
++-----------------------------------------------------------------------+
+
+**2. Visual Pipeline Flow**
+
+The complete 10-node pipeline flows top-to-bottom. Each node receives
+data from the previous node, processes it, and passes it forward.
+Green-highlighted nodes were added on Day 6.
+
+  -------- ------------------------------- ------------------- --------------
+  **\#**   **Node Name**                   **Type**            **Added**
+
+  **1**    **Manual Trigger**              Trigger             Day 3-5
+
+  **2**    **Parse Brief**                 Set Node            Day 3-5
+
+  **3**    **CorpFit Qdrant**              Vector Store        Day 3-5
+
+  **4**    **Get Banned Phrases**          Vector Store        Day 3-5
+
+  **5**    **Assemble Prompt**             Code (JavaScript)   Day 3-5
+
+  **6**    **Call Claude API**             Code (JavaScript)   Day 3-5
+
+  **7**    **Parse Output**                Code (JavaScript)   Day 3-5
+
+  **8**    **Banned Phrase Check**         Code (JavaScript)   Day 3-5
+
+  **9**    **Store Result**                Code (JavaScript)   **NEW Day 6**
+
+  **10**   **Error Handler**               Code (JavaScript)   **NEW Day 6**
+  -------- ------------------------------- ------------------- --------------
+
+  ----------------- ----------------- ----------------- -----------------
+  **Trigger**       **Set/Config**    **Vector Store**  **Code (JS)**
+
+  ----------------- ----------------- ----------------- -----------------
+
+**2.1 Data Flow Diagram**
+
+This diagram shows how data transforms as it moves through each node:
+
++-----------------------------------------------------------------------+
+| ┌────────────────────────────────────────────────────────────────┐    |
+|                                                                       |
+| │ \[1\] MANUAL TRIGGER │                                              |
+|                                                                       |
+| │ └──\> Click \"Test Workflow\" (future: QUANTUM cron) │              |
+|                                                                       |
+| └────────────────────────────────────────────────────────────────┘    |
+|                                                                       |
+| │                                                                     |
+|                                                                       |
+| ▼                                                                     |
+|                                                                       |
+| ┌────────────────────────────────────────────────────────────────┐    |
+|                                                                       |
+| │ \[2\] PARSE BRIEF │                                                 |
+|                                                                       |
+| │ Input: Raw brief (topic, platform, module, funnel, dur) │           |
+|                                                                       |
+| │ Output: 5 structured fields → 1 item │                              |
+|                                                                       |
+| └────────────────────────────────────────────────────────────────┘    |
+|                                                                       |
+| │                                                                     |
+|                                                                       |
+| ┌────────┴────────┐                                                   |
+|                                                                       |
+| ▼ ▼                                                                   |
+|                                                                       |
+| ┌─────────────────────────────┐ ┌──────────────────────────────┐      |
+|                                                                       |
+| │ \[3\] CORPFIT QDRANT │ │ \[4\] GET BANNED PHRASES │                 |
+|                                                                       |
+| │ corpfit_brand_rules │ │ corpfit_banned_phrases │                    |
+|                                                                       |
+| │ → 15 most relevant rules │ │ → ALL 71 banned phrases │              |
+|                                                                       |
+| │ (nomic-embed-text) │ │ (nomic-embed-text) │                         |
+|                                                                       |
+| └─────────────────────────────┘ └──────────────────────────────┘      |
+|                                                                       |
+| │ │                                                                   |
+|                                                                       |
+| └────────┬────────┘                                                   |
+|                                                                       |
+| ▼                                                                     |
+|                                                                       |
+| ┌────────────────────────────────────────────────────────────────┐    |
+|                                                                       |
+| │ \[5\] ASSEMBLE PROMPT │                                             |
+|                                                                       |
+| │ Merges: Static Core (\~1,200w) + Brand Rules + Banned │             |
+|                                                                       |
+| │ Output: Complete system prompt → 1 item │                           |
+|                                                                       |
+| └────────────────────────────────────────────────────────────────┘    |
+|                                                                       |
+| │                                                                     |
+|                                                                       |
+| ▼                                                                     |
+|                                                                       |
+| ┌────────────────────────────────────────────────────────────────┐    |
+|                                                                       |
+| │ \[6\] CALL CLAUDE API │                                             |
+|                                                                       |
+| │ Model: claude-sonnet-4-20250514 │                                   |
+|                                                                       |
+| │ Method: this.helpers.httpRequest() │                                |
+|                                                                       |
+| │ Output: Raw text response → 1 item │                                |
+|                                                                       |
+| └────────────────────────────────────────────────────────────────┘    |
+|                                                                       |
+| │                                                                     |
+|                                                                       |
+| ▼                                                                     |
+|                                                                       |
+| ┌────────────────────────────────────────────────────────────────┐    |
+|                                                                       |
+| │ \[7\] PARSE OUTPUT │                                                |
+|                                                                       |
+| │ Extracts 10 structured JSON fields from raw text │                  |
+|                                                                       |
+| │ Fields: hooks, script, captions, CTA, disclaimer\... │              |
+|                                                                       |
+| └────────────────────────────────────────────────────────────────┘    |
+|                                                                       |
+| │                                                                     |
+|                                                                       |
+| ▼                                                                     |
+|                                                                       |
+| ┌────────────────────────────────────────────────────────────────┐    |
+|                                                                       |
+| │ \[8\] BANNED PHRASE CHECK │                                         |
+|                                                                       |
+| │ Scans ALL 10 content fields against 71 banned phrases │             |
+|                                                                       |
+| │ Output: qa_passed (bool) + violations list │                        |
+|                                                                       |
+| └────────────────────────────────────────────────────────────────┘    |
+|                                                                       |
+| │                                                                     |
+|                                                                       |
+| ▼                                                                     |
+|                                                                       |
+| ┌────────────────────────────────────────────────────────────────┐    |
+|                                                                       |
+| │ \[9\] STORE RESULT ★ NEW Day 6 │                                    |
+|                                                                       |
+| │ Writes 28 columns to PostgreSQL content_logs │                      |
+|                                                                       |
+| │ Output: Record ID + confirmation status │                           |
+|                                                                       |
+| └────────────────────────────────────────────────────────────────┘    |
+|                                                                       |
+| │                                                                     |
+|                                                                       |
+| ▼                                                                     |
+|                                                                       |
+| ┌────────────────────────────────────────────────────────────────┐    |
+|                                                                       |
+| │ \[10\] ERROR HANDLER ★ NEW Day 6 │                                  |
+|                                                                       |
+| │ Catches: Claude API + Qdrant + PostgreSQL failures │                |
+|                                                                       |
+| │ Retry: 2x with exponential backoff (2s, 4s) │                       |
+|                                                                       |
+| └────────────────────────────────────────────────────────────────┘    |
++-----------------------------------------------------------------------+
+
+**3. Node-by-Node Specification**
+
+Each node is detailed below with its purpose, inputs, outputs, and
+technical implementation notes.
+
+  ---------------- ------------------------------------------------------
+  **NODE 1: MANUAL 
+  TRIGGER**        
+
+  **Type**         Trigger Node (n8n built-in)
+
+  **Added**        Day 3
+
+  **Purpose**      Starts the pipeline execution. Currently activated by
+                   clicking \'Test Workflow\' in n8n. Will be replaced by
+                   QUANTUM webhook/cron trigger in Phase 3 (Day 7).
+
+  **Input**        None (user click)
+
+  **Output**       Empty item → triggers Node 2
+  ---------------- ------------------------------------------------------
+
+**Future upgrade:** This trigger will be replaced with either a QUANTUM
+orchestrator webhook (for on-demand generation) or a cron schedule (for
+automated daily/weekly content batches). The QUANTUM system will pass
+the brief directly into the trigger, eliminating manual input.
+
+  ---------------- ------------------------------------------------------
+  **NODE 2: PARSE  
+  BRIEF**          
+
+  **Type**         Set Node (n8n built-in)
+
+  **Added**        Day 4
+
+  **Purpose**      Extracts and structures the production brief into 5
+                   clean fields that all downstream nodes can reference.
+
+  **Input**        Raw brief parameters (manually configured in node)
+
+  **Output**       1 structured item with 5 fields: module, platform,
+                   funnel, topic, duration
+  ---------------- ------------------------------------------------------
+
+**Brief Fields**
+
+  ------------------------------------------------------------------------
+  **Field**   **Example Value**     **Description**
+  ----------- --------------------- --------------------------------------
+  module      Steps                 One of 5 CorpFit modules (Steps,
+                                    Workouts, Meals, Check-in, Events)
+
+  platform    TikTok                Target social platform (TikTok,
+                                    Instagram, LinkedIn)
+
+  funnel      B2C                   Audience funnel (B2B for corporate HR,
+                                    B2C for individual users)
+
+  topic       Desk stretches for    Specific content topic
+              office workers        
+
+  duration    30s                   Target video duration
+  ------------------------------------------------------------------------
+
+**Design decision:** Using a Set node (not a Code node) keeps brief
+parsing simple and visual. Anyone can click the node in n8n and
+immediately see/edit all 5 fields without reading JavaScript.
+
+  ---------------- ------------------------------------------------------
+  **NODE 3:        
+  CORPFIT QDRANT** 
+
+  **Type**         Vector Store (Qdrant)
+
+  **Added**        Day 4
+
+  **Purpose**      Performs semantic search against the
+                   corpfit_brand_rules collection in Qdrant to retrieve
+                   the 15 most relevant brand rules for the current
+                   content brief.
+
+  **Input**        Brief fields (module, platform, funnel) from Node 2
+
+  **Output**       15 brand rule items (text + relevance score)
+  ---------------- ------------------------------------------------------
+
+**How Semantic Search Works**
+
+The node converts the brief\'s topic and platform into a vector
+embedding using Ollama\'s nomic-embed-text model, then finds the 15
+closest matching rules in the Qdrant collection. This means a
+TikTok/Steps brief automatically pulls TikTok tone rules and Steps
+module definitions, while a LinkedIn/Events brief pulls LinkedIn
+professionalism rules and Events guidelines.
+
+**Collection Details**
+
+  -----------------------------------------------------------------------
+  **Property**           **Value**
+  ---------------------- ------------------------------------------------
+  Collection             corpfit_brand_rules
+
+  Total Entries          44
+
+  Retrieval Limit        15 per query
+
+  Embedding Model        nomic-embed-text (via Ollama at ollama:11434)
+
+  Vector Size            768 dimensions
+
+  Distance Metric        Cosine similarity
+  -----------------------------------------------------------------------
+
+**Why 15 items?** Testing showed 15 provides the right balance: enough
+context for Claude to apply brand rules accurately, but not so many that
+irrelevant rules dilute the prompt. Increasing to 20+ added noise
+without improving output quality.
+
+  ---------------- ------------------------------------------------------
+  **NODE 4: GET    
+  BANNED PHRASES** 
+
+  **Type**         Vector Store (Qdrant)
+
+  **Added**        Day 4
+
+  **Purpose**      Loads ALL banned phrases from the
+                   corpfit_banned_phrases collection. Unlike Node 3
+                   (which does smart retrieval), this node loads the
+                   complete safety net --- every single phrase that
+                   ELECTRON-2 must never use.
+
+  **Input**        Brief fields from Node 2 (used as search query)
+
+  **Output**       All 71 banned phrase items
+  ---------------- ------------------------------------------------------
+
+**Collection Details**
+
+  -----------------------------------------------------------------------
+  **Property**           **Value**
+  ---------------------- ------------------------------------------------
+  Collection             corpfit_banned_phrases
+
+  Total Entries          71
+
+  Retrieval Limit        75 (headroom above 71 entries)
+
+  Embedding Model        nomic-embed-text (via Ollama at ollama:11434)
+  -----------------------------------------------------------------------
+
+**Banned Phrase Categories**
+
+  -----------------------------------------------------------------------
+  **Category**     **Examples**                          **Count**
+  ---------------- ------------------------------------- ----------------
+  Health Claims    \"cure\", \"treat\", \"heal\",        \~20
+                   \"fix\", \"guarantee results\"        
+
+  Diet Culture     \"cheat meal\", \"guilty pleasure\",  \~15
+                   \"no pain no gain\"                   
+
+  Body Shaming     \"beach body\", \"bikini body\",      \~12
+                   \"skinny\"                            
+
+  Medical Terms    \"prescription\", \"diagnosis\",      \~10
+                   \"therapy\"                           
+
+  Competitor Refs  \"FunFit\", \"competitor names\"      \~8
+
+  Absolute         \"always\", \"never\", \"everyone     \~6
+  Language         should\"                              
+  -----------------------------------------------------------------------
+
+**Why load ALL?** Banned phrases are a safety net, not a relevance
+query. Missing even one dangerous phrase (like \'cures diabetes\') could
+cause real harm. The full list at 71 entries adds minimal tokens (\~500)
+to the prompt --- a worthwhile trade-off for complete safety coverage.
+
+  ---------------- ------------------------------------------------------
+  **NODE 5:        
+  ASSEMBLE         
+  PROMPT**         
+
+  **Type**         Code Node (JavaScript)
+
+  **Added**        Day 4
+
+  **Purpose**      The brain of the pipeline. Merges the static core
+                   prompt (\~1,200 words), the 15 dynamically retrieved
+                   brand rules, and all 71 banned phrases into one
+                   complete system prompt for Claude.
+
+  **Input**        Brief (Node 2) + Brand Rules (Node 3) + Banned Phrases
+                   (Node 4)
+
+  **Output**       1 item containing: assembled system prompt + user
+                   message (brief)
+  ---------------- ------------------------------------------------------
+
+**Prompt Assembly Logic**
+
++-----------------------------------------------------------------------+
+| // Pseudocode for prompt assembly                                     |
+|                                                                       |
+| const systemPrompt = \[                                               |
+|                                                                       |
+| STATIC_CORE, // \~1,200 words (hardcoded)                             |
+|                                                                       |
+| \"\\n\-\-- BRAND RULES \-\--\\n\",                                    |
+|                                                                       |
+| brandRules.map(r =\> // 15 items from Qdrant                          |
+|                                                                       |
+| r.text).join(\"\\n\"),                                                |
+|                                                                       |
+| \"\\n\-\-- BANNED PHRASES \-\--\\n\",                                 |
+|                                                                       |
+| bannedPhrases.map(p =\> // 71 items from Qdrant                       |
+|                                                                       |
+| p.text).join(\", \")                                                  |
+|                                                                       |
+| \].join(\"\\n\");                                                     |
+|                                                                       |
+| const userMessage =                                                   |
+|                                                                       |
+| \`Create content for: \${topic}                                       |
+|                                                                       |
+| Platform: \${platform} \| Module: \${module}                          |
+|                                                                       |
+| Funnel: \${funnel} \| Duration: \${duration}\`;                       |
+|                                                                       |
+| return { systemPrompt, userMessage };                                 |
++-----------------------------------------------------------------------+
+
+**Token Breakdown (Estimated)**
+
+  ------------------------------------------------------------------------
+  **Component**              **Tokens**             **% of Total**
+  -------------------------- ---------------------- ----------------------
+  Static Core                \~800                  40%
+
+  Brand Rules (15 items)     \~600                  30%
+
+  Banned Phrases (71 items)  \~400                  20%
+
+  Brief / User Message       \~200                  10%
+
+  TOTAL INPUT                \~2,000                100%
+  ------------------------------------------------------------------------
+
+  ---------------- ------------------------------------------------------
+  **NODE 6: CALL   
+  CLAUDE API**     
+
+  **Type**         Code Node (JavaScript)
+
+  **Added**        Day 4
+
+  **Purpose**      Sends the assembled prompt to Claude Sonnet 4 via the
+                   Anthropic API and receives the complete content
+                   package as raw text.
+
+  **Input**        Assembled system prompt + user message from Node 5
+
+  **Output**       1 item containing Claude\'s raw text response
+                   (\~1,500-2,500 words)
+  ---------------- ------------------------------------------------------
+
+**API Configuration**
+
+  -----------------------------------------------------------------------
+  **Parameter**          **Value**
+  ---------------------- ------------------------------------------------
+  Endpoint               https://api.anthropic.com/v1/messages
+
+  Model                  claude-sonnet-4-20250514
+
+  Max Tokens             4096
+
+  Temperature            0.7 (balanced creativity + consistency)
+
+  API Key                Stored in n8n credentials (corpfit-quantum)
+
+  HTTP Method            this.helpers.httpRequest() (n8n sandboxed)
+  -----------------------------------------------------------------------
+
+**Why this.helpers.httpRequest()?**
+
+n8n Code nodes run in a sandboxed JavaScript environment where standard
+fetch() and \$http methods are not available. After 5 failed debugging
+attempts with HTTP Request nodes and other methods,
+this.helpers.httpRequest() was discovered as the correct approach ---
+it\'s n8n\'s native sandboxed HTTP client that bypasses all body/header
+parsing conflicts.
+
+**Cost Per Generation**
+
+  -----------------------------------------------------------------------
+  **Metric**                 **Value**
+  -------------------------- --------------------------------------------
+  Input tokens               \~2,000 (\$0.003 per 1K = \$0.006)
+
+  Output tokens              \~1,500 (\$0.015 per 1K = \$0.0225)
+
+  Total per piece            \~\$0.005 (after accounting for caching)
+
+  Monthly (72 pieces)        \~\$0.36
+  -----------------------------------------------------------------------
+
+  ---------------- ------------------------------------------------------
+  **NODE 7: PARSE  
+  OUTPUT**         
+
+  **Type**         Code Node (JavaScript)
+
+  **Added**        Day 5
+
+  **Purpose**      Extracts 10 structured content fields from Claude\'s
+                   raw text response. Converts one giant text blob into
+                   clean, individually accessible JSON fields.
+
+  **Input**        Raw text response from Node 6
+
+  **Output**       1 item with 10 structured JSON fields
+  ---------------- ------------------------------------------------------
+
+**Extracted Fields**
+
+  --------------------------------------------------------------------------------
+  **\#**   **Field**        **Description**             **Example**
+  -------- ---------------- --------------------------- --------------------------
+  1        brief_summary    One-line summary of the     30s TikTok for B2C: desk
+                            content brief               stretches
+
+  2        hooks            3 attention-grabbing        \"Your desk is slowly
+                            opening lines               killing you\...\"
+
+  3        script           Complete video script with  \[0-5s\] Hook \| \[5-20s\]
+                            timestamps                  Demo \| \[20-30s\] CTA
+
+  4        on_screen_text   Text overlays for the video \"Try this NOW\" \| \"3
+                                                        stretches\"
+
+  5        storyboard       Visual scene descriptions   Scene 1: Office worker at
+                                                        desk\...
+
+  6        caption_short    Short social media caption  Your desk routine needs
+                                                        this 💪
+
+  7        caption_long     Extended caption with       Full paragraph + #CorpFit
+                            hashtags                    #WellnessAtWork
+
+  8        cta              Call to action              Download CorpFit → link in
+                                                        bio
+
+  9        disclaimer       Health/safety disclaimer    Consult a healthcare
+                                                        professional\...
+
+  10       self_check       Agent\'s own compliance     UAF compliance: 10/10
+                            report                      checks passed
+  --------------------------------------------------------------------------------
+
+**Parsing Method**
+
+The parser uses emoji headers as section delimiters. Claude\'s output
+follows the UAF-1.0 format with consistent emoji markers (e.g., 🎬 for
+hooks, 📝 for script). The parser splits on these markers, trims
+whitespace, and assigns each section to its corresponding JSON field.
+
+  ---------------- ------------------------------------------------------
+  **NODE 8: BANNED 
+  PHRASE CHECK**   
+
+  **Type**         Code Node (JavaScript)
+
+  **Added**        Day 5
+
+  **Purpose**      The second safety layer. Scans every single content
+                   field against all 71 banned phrases. This is the
+                   automated post-generation safety gate that catches
+                   anything Claude\'s built-in self-check might have
+                   missed.
+
+  **Input**        10 parsed content fields from Node 7 + banned phrases
+                   list from Node 4
+
+  **Output**       Original content + qa_passed (boolean) +
+                   qa_violations_count + qa_violations (array)
+  ---------------- ------------------------------------------------------
+
+**Dual-Layer Safety Architecture**
+
+  ---------------------------------------------------------------------------
+  **Layer**   **Type**        **When**          **How**
+  ----------- --------------- ----------------- -----------------------------
+  Layer 1     Claude          During generation Built into UAF-1.0 prompt:
+              Self-Check                        Claude checks its own output
+                                                before responding
+
+  Layer 2     Automated Scan  Post-generation   JavaScript loops through
+                              (this node)       every field, checking against
+                                                every banned phrase
+  ---------------------------------------------------------------------------
+
+**Scan Logic**
+
++-----------------------------------------------------------------------+
+| // Pseudocode for banned phrase scanning                              |
+|                                                                       |
+| const violations = \[\];                                              |
+|                                                                       |
+| const fields = \[hooks, script, caption_short, caption_long,          |
+|                                                                       |
+| cta, on_screen_text, storyboard, disclaimer,                          |
+|                                                                       |
+| brief_summary, self_check\];                                          |
+|                                                                       |
+| for (const field of fields) {                                         |
+|                                                                       |
+| for (const phrase of bannedPhrases) { // 71 phrases                   |
+|                                                                       |
+| if (field.toLowerCase().includes(phrase.toLowerCase())) {             |
+|                                                                       |
+| violations.push({ field: fieldName, phrase });                        |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| return {                                                              |
+|                                                                       |
+| \...contentFields,                                                    |
+|                                                                       |
+| qa_passed: violations.length === 0,                                   |
+|                                                                       |
+| qa_violations_count: violations.length,                               |
+|                                                                       |
+| qa_violations: violations,                                            |
+|                                                                       |
+| qa_status: violations.length === 0 ? \"CLEAN\" : \"FLAGGED\"          |
+|                                                                       |
+| };                                                                    |
++-----------------------------------------------------------------------+
+
+**Track record:** Across all 10 tests, this node has detected 0 banned
+phrase violations. Claude\'s Layer 1 self-check has been 100% effective
+so far, but Layer 2 exists as an insurance policy --- no single point of
+failure for content safety.
+
+  ---------------- ------------------------------------------------------
+  **NODE 9: STORE  
+  RESULT ✦ NEW Day 
+  6**              
+
+  **Type**         Code Node (JavaScript)
+
+  **Added**        Day 6
+
+  **Purpose**      Writes the complete content package (brief metadata,
+                   all 10 content fields, QA results, system metadata,
+                   and raw response) to the PostgreSQL content_logs table
+                   for persistent storage, audit trails, and downstream
+                   agent access.
+
+  **Input**        All content fields + QA results from Node 8
+
+  **Output**       Stored record ID + confirmation status
+  ---------------- ------------------------------------------------------
+
+**Database Connection**
+
+  -----------------------------------------------------------------------
+  **Parameter**          **Value**
+  ---------------------- ------------------------------------------------
+  Host (Docker)          postgres:5432
+
+  Host (Browser)         localhost:5432
+
+  Database               corpfit
+
+  Table                  content_logs
+
+  Total Columns          28
+
+  Total Indexes          6
+  -----------------------------------------------------------------------
+
+**Schema: 28 Columns Across 6 Groups**
+
+  ----------------------------------------------------------------------------
+  **Group**       **Cols**   **Fields**
+  --------------- ---------- -------------------------------------------------
+  Identity        3          id (SERIAL PK), created_at (TIMESTAMPTZ DEFAULT
+                             NOW()), updated_at
+
+  Brief Metadata  5          module, platform, funnel, topic, duration
+
+  Content Fields  10         brief_summary, hooks, script, on_screen_text,
+                             storyboard, caption_short, caption_long, cta,
+                             disclaimer, self_check
+
+  QA Results      4          qa_passed (BOOLEAN), qa_violations_count (INT),
+                             qa_violations (JSONB), qa_status (VARCHAR)
+
+  System Metadata 4          model_used, pipeline_version,
+                             token_count_estimate, generation_cost_usd
+
+  Audit           2          raw_response (TEXT), approval_status (VARCHAR
+                             DEFAULT \'pending\')
+  ----------------------------------------------------------------------------
+
+**Database Indexes**
+
+  ---------------------------------------------------------------------------
+  **Index**                          **Purpose**
+  ---------------------------------- ----------------------------------------
+  idx_content_logs_created_at        Time-based queries and daily/weekly
+                                     reporting
+
+  idx_content_logs_module            Filter by content module (Steps,
+                                     Workouts, Meals, Check-in, Events)
+
+  idx_content_logs_platform          Filter by target platform (TikTok,
+                                     Instagram, LinkedIn)
+
+  idx_content_logs_funnel            Filter by B2B/B2C funnel
+
+  idx_content_logs_qa_passed         Quick QA pass/fail filtering for QUANTUM
+                                     review
+
+  idx_content_logs_approval_status   Content approval pipeline tracking
+                                     (pending/approved/blocked)
+  ---------------------------------------------------------------------------
+
+  ---------------- ------------------------------------------------------
+  **NODE 10: ERROR 
+  HANDLER ✦ NEW    
+  Day 6**          
+
+  **Type**         Code Node (JavaScript)
+
+  **Added**        Day 6
+
+  **Purpose**      Catches and manages errors from Claude API calls,
+                   Qdrant queries, and PostgreSQL writes. Implements
+                   retry logic with exponential backoff and graceful
+                   fallbacks to prevent pipeline crashes.
+
+  **Input**        Error outputs from Nodes 3, 4, 6, and 9
+
+  **Output**       Error log entry + retry attempt or graceful fallback
+  ---------------- ------------------------------------------------------
+
+**Error Recovery Matrix**
+
+  ------------------------------------------------------------------------
+  **Error Type**   **HTTP Code**   **Action**            **Fallback**
+  ---------------- --------------- --------------------- -----------------
+  Claude API       408 / 500 / 529 Retry 2x with backoff Mark job failed
+  timeout                          (2s, 4s)              
+
+  Claude API auth  401             Log and alert (no     Human review
+  error                            retry)                
+
+  Qdrant           Connection      Retry 1x              Use cached rules
+  unreachable      refused                               
+
+  PostgreSQL write Insert error    Retry 1x              Log to file
+  fail                                                   
+
+  Parse Output     Missing         Log raw response      Manual review
+  failure          sections                              
+  ------------------------------------------------------------------------
+
+**Retry Logic**
+
++-----------------------------------------------------------------------+
+| // Exponential backoff implementation                                 |
+|                                                                       |
+| async function retryWithBackoff(fn, maxRetries = 2) {                 |
+|                                                                       |
+| for (let attempt = 0; attempt \<= maxRetries; attempt++) {            |
+|                                                                       |
+| try {                                                                 |
+|                                                                       |
+| return await fn();                                                    |
+|                                                                       |
+| } catch (error) {                                                     |
+|                                                                       |
+| if (attempt === maxRetries) throw error;                              |
+|                                                                       |
+| const delay = Math.pow(2, attempt + 1) \* 1000; // 2s, 4s             |
+|                                                                       |
+| logError({                                                            |
+|                                                                       |
+| timestamp: new Date().toISOString(),                                  |
+|                                                                       |
+| node: error.node,                                                     |
+|                                                                       |
+| message: error.message,                                               |
+|                                                                       |
+| retryAttempt: attempt + 1,                                            |
+|                                                                       |
+| nextRetryIn: delay + \"ms\"                                           |
+|                                                                       |
+| });                                                                   |
+|                                                                       |
+| await sleep(delay);                                                   |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| }                                                                     |
++-----------------------------------------------------------------------+
+
+**Error Monitoring**
+
+All errors are logged with timestamp, originating node, error message,
+and retry count. In Phase 3, QUANTUM will monitor these logs and can
+trigger alerts when error rates exceed thresholds (e.g., 3+ failures in
+1 hour).
+
+**4. Prerequisites & Connections**
+
+**4.1 Required Docker Services**
+
+  ----------------------------------------------------------------------------------
+  **Service**      **Port**   **Docker       **Role in Pipeline**
+                              Name**         
+  ---------------- ---------- -------------- ---------------------------------------
+  n8n              5678       n8n            Workflow engine --- runs all 10 nodes
+
+  Qdrant           6333       qdrant         Vector DB --- Nodes 3 & 4 (brand
+                                             rules + banned phrases)
+
+  Ollama           11434      ollama         Embedding model --- nomic-embed-text
+                                             for Qdrant searches
+
+  **PostgreSQL**   **5432**   **postgres**   **Node 9: Store Result --- content_logs
+                                             table (LIVE since Day 6)**
+
+  Claude API       Cloud      ---            Node 6: Primary inference engine
+
+  Open WebUI       3000       open-webui     Human testing interface
+
+  Portainer        9000       portainer      Container management dashboard
+  ----------------------------------------------------------------------------------
+
+**4.2 Qdrant Collections**
+
+  -------------------------------------------------------------------------------------
+  **Collection**           **Entries**   **Embedding        **Vector    **Used By**
+                                         Model**            Size**      
+  ------------------------ ------------- ------------------ ----------- ---------------
+  corpfit_brand_rules      44            nomic-embed-text   768         Node 3
+
+  corpfit_banned_phrases   71            nomic-embed-text   768         Node 4 + Node 8
+  -------------------------------------------------------------------------------------
+
+**4.3 Docker Networking**
+
+Inside Docker, services must connect using container names, not
+localhost. This is a critical requirement that caused multiple debugging
+issues during Day 4 development.
+
+  ------------------------------------------------------------------------------
+  **From**        **To**          **URL**
+  --------------- --------------- ----------------------------------------------
+  n8n             Qdrant          http://qdrant:6333
+
+  n8n             Ollama          http://ollama:11434
+
+  n8n             PostgreSQL      postgresql://user:pass@postgres:5432/corpfit
+
+  n8n             Claude API      https://api.anthropic.com/v1/messages
+
+  Browser         n8n             http://localhost:5678
+
+  Browser         Qdrant          http://localhost:6333/dashboard
+  ------------------------------------------------------------------------------
+
+**5. Validated Test Results**
+
+  -----------------------------------------------------------------------
+  **10 TESTS \| 10 PASSED \| 0 FAILED \| 100% SUCCESS RATE \| 0 BANNED
+  PHRASES**
+
+  -----------------------------------------------------------------------
+
+  ------------------------------------------------------------------------------------------------------------------------
+  **\#**   **Topic**     **Platform**    **Module**     **Funnel**   **Day**   **Pipeline**   **Banned**   **Result**
+  -------- ------------- --------------- -------------- ------------ --------- -------------- ------------ ---------------
+  1        Desk          TikTok          Steps          B2C          3         Hardcoded      0            PASS
+           stretches                                                                                       
+
+  2        Smoothie      Instagram       Meals          B2C          3         Hardcoded      0            PASS
+           recipes                                                                                         
+
+  3        Wellness      LinkedIn        Events         B2B          3         Hardcoded      0            PASS
+           challenge                                                                                       
+
+  4        Desk          TikTok          Steps          B2C          4         RAG v1         0            PASS
+           stretches                                                                                       
+
+  5        Desk          TikTok          Steps          B2C          5         RAG v2         0            PASS
+           stretches                                                                                       
+
+  6        Protein       Instagram       Meals          B2C          5         RAG v2         0            PASS
+           smoothies                                                                                       
+
+  7        Wellness      LinkedIn        Events         B2B          5         RAG v2         0            PASS
+           challenge                                                                                       
+
+  **8**    **Quick       **TikTok**      **Workouts**   **B2C**      **6**     **RAG v3**     **0**        **PASS**
+           HIIT**                                                                                          
+
+  **9**    **Wind-down   **Instagram**   **Check-in**   **B2C**      **6**     **RAG v3**     **0**        **PASS**
+           routine**                                                                                       
+
+  **10**   **Step        **LinkedIn**    **Events**     **B2B**      **6**     **RAG v3**     **0**        **PASS**
+           challenge**                                                                                     
+  ------------------------------------------------------------------------------------------------------------------------
+
+**Module Coverage**
+
+  --------------------------------------------------------------------------
+  **Module**       **Tests**   **Platforms Tested**  **Status**
+  ---------------- ----------- --------------------- -----------------------
+  Steps            4           TikTok                ✅ Covered
+
+  Workouts         1           TikTok                ✅ Covered
+
+  Meals            2           Instagram             ✅ Covered
+
+  Check-in         1           Instagram             ✅ Covered
+
+  Events           2           LinkedIn              ✅ Covered
+  --------------------------------------------------------------------------
+
+**6. Troubleshooting Guide**
+
+  -----------------------------------------------------------------------
+  **Issue**              **Solution**
+  ---------------------- ------------------------------------------------
+  Claude API returns 401 Check API key in n8n credentials. Verify the
+                         corpfit-quantum key is active in Anthropic
+                         console.
+
+  Qdrant returns empty   Verify collection names are corpfit_brand_rules
+  results                and corpfit_banned_phrases (not funfit\_\*).
+                         Check Qdrant dashboard at localhost:6333.
+
+  \'fetch is not         Use this.helpers.httpRequest() instead. Standard
+  defined\' in Code node fetch() and \$http are not available in n8n\'s
+                         sandbox.
+
+  Output parsing returns Check Claude\'s raw response for emoji headers.
+  empty fields           If headers are missing, the UAF-1.0 prompt may
+                         have been truncated.
+
+  Banned phrase check    Review the flagged phrase in context. Some
+  flags false positive   common words may overlap with banned phrases.
+                         Adjust the banned phrase list in Qdrant.
+
+  Docker service         Use container names (qdrant, ollama, postgres)
+  unreachable            not localhost. Run \'docker ps\' to verify all
+                         containers are running.
+
+  n8n workflow hangs     Check n8n execution logs. Most common cause:
+                         Claude API timeout (\>30s). Error Handler should
+                         catch and retry.
+
+  Content uses #FunFit   Collections were migrated from funfit\_\* to
+  instead of #CorpFit    corpfit\_\* on Day 5. Verify n8n nodes point to
+                         corpfit\_\* collections.
+
+  **PostgreSQL insert    **Verify content_logs table exists. Check
+  fails**                connection uses postgres:5432 (not localhost).
+                         Run: docker exec -it postgres psql -U user -d
+                         corpfit -c \'\\dt\'**
+
+  **Error handler not    **Ensure Error Handler node (Node 10) is
+  catching errors**      connected to the error output (red port) of
+                         upstream nodes in n8n, not the success output.**
+
+  High API costs         Check token_count_estimate in content_logs.
+                         Expected: \~2,000 input + \~1,500 output per
+                         piece. If higher, brand rules retrieval limit
+                         may need reducing.
+  -----------------------------------------------------------------------
+
+**7. Phase 3: QUANTUM Orchestrator Roadmap**
+
+With Phase 2 (ELECTRON-2) complete and signed off, the next phase
+focuses on building the QUANTUM Orchestrator that will coordinate all
+ELECTRON agents, enforce quality gates, and serve as the final authority
+on what gets published.
+
+  -------------------------------------------------------------------------------------
+  **\#**   **Task**                 **Priority**   **Target   **Details**
+                                                   Day**      
+  -------- ------------------------ -------------- ---------- -------------------------
+  1        Replace Manual Trigger   HIGH           Day 7      QUANTUM sends briefs
+           with QUANTUM                                       directly, eliminating
+           webhook/cron                                       manual input
+
+  2        QUANTUM QA gate          HIGH           Day 8      Health claims checker,
+           sub-workflow                                       brand tone checker,
+                                                              audience fit checker
+
+  3        QUANTUM task ticket      HIGH           Day 8      Auto-generate briefs from
+           system                                             ELECTRON-1 trend
+                                                              discoveries
+
+  4        Approval token system    MEDIUM         Day 9      PKT-DATE-SEQ format for
+                                                              content tracking and
+                                                              approval
+
+  5        Daily/weekly reporting   MEDIUM         Day 9      Auto-generate performance
+           automation                                         reports from content_logs
+  -------------------------------------------------------------------------------------
+
+  -----------------------------------------------------------------------
+
+  -----------------------------------------------------------------------
+
+  -----------------------------------------------------------------------
+  **CORPFIT QUANTUM AI Content Factory \| ELECTRON-2 Workflow v4 \| Day 6
+  \| February 2026**
+
+  -----------------------------------------------------------------------

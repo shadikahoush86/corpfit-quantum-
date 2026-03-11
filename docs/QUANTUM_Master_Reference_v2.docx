@@ -1,0 +1,2232 @@
+**CORPFIT**
+
+*Circle of Resilient People*
+
+**QUANTUM AI CONTENT FACTORY**
+
+*Master System Reference Document*
+
+Single Source of Truth --- Every Flow, Every Agent, Every Config
+
+Version 1.0 \| March 2026
+
+Author: S-H-K Software Solutions (QUANTUM System Architect)
+
+*Classification: Internal Operations --- Confidential*
+
+**1. SYSTEM OVERVIEW**
+
+**1.1 Mission & Core Principle**
+
+CorpFit is a B2B2C corporate wellness platform (\'Circle of Resilient
+People\'). The QUANTUM AI Content Factory is a fully autonomous
+multi-agent system that discovers trending wellness topics, generates
+brand-compliant content, produces AI videos, and publishes to social
+media --- all managed from a phone via Telegram.
+
+**NORTH STAR:** \"Making health, losing weight, losing fat is FUN.\" ---
+Every feature, every piece of content, every decision must pass this
+test.
+
+**1.2 Team**
+
+  -----------------------------------------------------------------------
+  **Person**       **Role**         **Responsible For**
+  ---------------- ---------------- -------------------------------------
+  Mr. Bashar       Founder &        Product vision, business strategy,
+                   Visionary        client relationships
+
+  S-H-K Software   QUANTUM System   All 16 workflows, 5 agents, QA gates,
+  Solutions        Architect        dashboard, Telegram bot, ORBIT
+                                    pipeline
+
+  Ammar            Tech Lead        CorpFit mobile app (iOS/Android),
+                                    corporate admin dashboard, backend
+                                    API
+  -----------------------------------------------------------------------
+
+**1.3 Platform Summary**
+
+  -----------------------------------------------------------------------
+  **Property**            **Value**
+  ----------------------- -----------------------------------------------
+  Brand Name              CorpFit (never FunFit --- old name)
+
+  Business Model          B2B2C --- Corporate HR contracts + Individual
+                          subscriptions
+
+  App Modules             Steps, Workouts, Meals, Check-in, Events
+
+  Target Funnels          B2C (Download CorpFit) + B2B (Book a demo)
+
+  Automation Engine       n8n (self-hosted Docker)
+
+  AI Inference            Claude Sonnet 4 (content) + Claude Haiku 4.5
+                          (QA)
+
+  Knowledge Base          Qdrant vector DB (44 brand rules + 71 banned
+                          phrases)
+
+  Dashboard               dashboard.corpfit.cloud (Cloudflare Workers)
+
+  Operator Interface      Telegram Bot (approve, reject, publish, kill, 8
+                          commands)
+
+  Operating Mode          24/7 automation --- operator spends \~15
+                          min/day on approvals
+  -----------------------------------------------------------------------
+
+**2. SYSTEM ARCHITECTURE**
+
+**2.1 Agent Hierarchy**
+
+The system operates on a strict hierarchical model. QUANTUM is the
+orchestrator with final authority over all publishing decisions.
+
+  ---------------------------------------------------------------------------------
+  **Agent**    **Codename**   **Role**         **Primary Output**   **QA
+                                                                    Authority**
+  ------------ -------------- ---------------- -------------------- ---------------
+  QUANTUM      Orchestrator   Plans, assigns,  Content briefs +     FINAL --- all
+                              reviews,         approval decisions   gates
+                              approves                              
+
+  ELECTRON-1   Trend Scout    Discovers &      Ranked trend board   None (recommend
+                              scores wellness  (7-15 trends/day)    only)
+                              trends                                
+
+  ELECTRON-2   Content        Generates        Full content package None (drafts
+               Architect      scripts,         (10 fields)          only)
+                              captions, CTAs                        
+
+  ELECTRON-3   Video Producer Routes to video  AI video +           Pre-check only
+                              tools, produces  storyboard +         
+                              media            thumbnail            
+
+  ELECTRON-4 / Publisher      Schedules &      Live                 Platform
+  ORBIT                       publishes to     TikTok/IG/LinkedIn   compliance
+                              social platforms posts                
+  ---------------------------------------------------------------------------------
+
+**2.2 Full Pipeline Flow**
+
+Every piece of content follows this exact path from discovery to
+publication:
+
+9:30 AM Cairo --- E1 Trend Scout fires (cron)
+
+↓ Discovers 7-15 wellness trends via RSS + Reddit + PubMed
+
+↓ Scores trends (relevance, safety, freshness, module fit)
+
+↓ Stores in trend_board table
+
+↓ Auto-triggers QUANTUM via webhook
+
+\~9:45 AM --- QUANTUM Planner fires (webhook)
+
+↓ Reads trend_board
+
+↓ Dedup check (sub-workflow) --- no duplicate topics
+
+↓ Creates 3 content briefs (topic, module, platform, funnel, duration)
+
+↓ Sends briefs to Telegram with \[Approve\] \[Reject\] buttons
+
+\~10:00 AM --- Operator reviews on Telegram
+
+↓ \[Approve\] → Brief Approval Handler triggers E2
+
+↓ \[Reject\] → Brief archived, pipeline stops
+
+\~30 seconds --- E2 Content Generator (webhook)
+
+↓ Qdrant search: 15 brand rules + 71 banned phrases loaded
+
+↓ Assemble Prompt v2 (dynamic CTA + platform tone + brand rules)
+
+↓ Claude Sonnet 4 generates full content (10 structured fields)
+
+↓ QA Gate 1: Health Claims (Haiku 4.5)
+
+↓ QA Gate 2: Brand & Tone v2 (Haiku 4.5 + DO NOT FAIL safe list)
+
+↓ QA Gate 3: Audience Fit v2 (Haiku 4.5 + 6 hard-coded checks)
+
+↓ Cost tracked (input tokens, output tokens, e2_cost, qa_cost,
+total_cost)
+
+↓ Stored in content_logs table
+
+↓ Content preview sent to Telegram with \[Publish\] \[Kill\] buttons
+
+Operator decision --- Telegram
+
+↓ \[Publish\] → E3 Video Producer triggered
+
+↓ \[Kill\] → Content archived, no video produced
+
+\~2-5 minutes --- E3 Video Producer (webhook)
+
+↓ Routing logic: module + funnel + platform → video tool
+
+↓ B2C Steps/Meals → Kling 2.6 via fal.ai
+
+↓ B2C Workouts → Veo 3.1
+
+↓ B2C Events/TikTok → Pika 2.2
+
+↓ B2B Events/LinkedIn → Synthesia
+
+↓ B2B default → HeyGen
+
+↓ Video produced → stored in publish_logs
+
+↓ Telegram preview sent
+
+E4 Scheduler (every 5 min)
+
+↓ Detects completed videos in publish_logs
+
+↓ Video quality check (resolution, duration, format)
+
+↓ Mode check: Manual / Semi-Auto / Full Auto
+
+↓ \[Manual\] → Telegram platform selection buttons
+
+↓ Operator selects TikTok / Instagram / LinkedIn / All
+
+↓ schedule_logs entry created (status: queued)
+
+ORBIT Publisher (every 5 min)
+
+↓ Reads queued items from schedule_logs
+
+↓ status → \'publishing\'
+
+↓ Platform API calls: TikTok / Instagram Graph / LinkedIn
+
+↓ status → \'published\' + platform_post_id + platform_post_url
+
+↓ Telegram confirmation sent
+
+↓ Dashboard Published tab updated
+
+**2.3 Information Flow Between Agents**
+
+  ---------------------------------------------------------------------------------
+  **Stage**    **From**     **To**       **Data Passed**      **Mechanism**
+  ------------ ------------ ------------ -------------------- ---------------------
+  1\.          External     ELECTRON-1   RSS feeds, Reddit,   HTTP requests in E1
+  Discovery    Sources                   PubMed               Code node
+
+  2\. Curation ELECTRON-1   QUANTUM      Trend board (scores, Webhook POST
+                                         labels, modules)     (auto-chained)
+
+  3\. Brief    QUANTUM      Telegram +   3 briefs with full   Telegram Bot API +
+  Creation                  DB           metadata             PostgreSQL INSERT
+
+  4\. Approval Operator     Brief        Callback action:     Telegram
+                            Approval     approve/reject       callback_query
+                            Handler                           polling
+
+  5\. Content  Brief        ELECTRON-2   Brief ID + brief     HTTP webhook POST
+  Gen          Approval                  data                 
+               Handler                                        
+
+  6\. QA       ELECTRON-2   Telegram     Content preview (all Telegram Bot API
+  Review                                 10 fields) + scores  (formatted message)
+
+  7\. Publish  Operator     Brief        Callback action:     Telegram
+  Decision                  Approval     publish/kill         callback_query
+                            Handler                           polling
+
+  8\. Video    Brief        ELECTRON-3   Content log ID +     HTTP webhook POST
+  Production   Approval                  brief data           
+               Handler                                        
+
+  9\. ORBIT    ELECTRON-4   Telegram     Platform selection   Telegram Bot API
+  Scheduling   Scheduler                 request              inline keyboard
+
+  10\.         ORBIT        Social       Video URL +          TikTok / Instagram /
+  Publishing   Publisher    Platforms    caption + hashtags   LinkedIn APIs
+  ---------------------------------------------------------------------------------
+
+**3. INFRASTRUCTURE**
+
+**3.1 Docker Stack**
+
+  ---------------------------------------------------------------------------------
+  **Service**   **Port**   **Purpose**              **Health       **Restart
+                                                    Check**        Policy**
+  ------------- ---------- ------------------------ -------------- ----------------
+  n8n           :5678      Workflow automation      GET /healthz   unless-stopped
+                           engine                                  
+
+  PostgreSQL    :5432      Primary database         pg_isready     unless-stopped
+
+  Qdrant        :6333      Vector knowledge base    GET            unless-stopped
+                           (brand rules + banned    /collections   
+                           phrases)                                
+
+  Ollama        :11434     Embedding model          GET /api/tags  unless-stopped
+                           (nomic-embed-text) for                  
+                           Qdrant                                  
+
+  Open WebUI    :3000      Chat interface for       HTTP 200       unless-stopped
+                           testing                                 
+
+  Portainer     :9000      Docker container         HTTP 200       unless-stopped
+                           management UI                           
+
+  FFmpeg        ---        Video post-processing    ---            unless-stopped
+  (sidecar)                (watermark, subtitles)                  
+  ---------------------------------------------------------------------------------
+
+**3.2 Database Credentials**
+
+  -----------------------------------------------------------------------
+  **Parameter**    **Value**
+  ---------------- ------------------------------------------------------
+  Host             localhost:5432 (Docker container: postgres)
+
+  Database         corpfit_db
+
+  Username         corpfit
+
+  Password         corpfit123
+
+  n8n Credential   q7zxG97pdUIHmNnO (named: Postgres account)
+  ID               
+  -----------------------------------------------------------------------
+
+**3.3 External Endpoints & Domains**
+
+  ---------------------------------------------------------------------------------------------
+  **Endpoint**    **URL**                                         **Purpose**
+  --------------- ----------------------------------------------- -----------------------------
+  Main Site       corpfit.cloud                                   CorpFit landing page
+
+  n8n Console     n8n.corpfit.cloud                               Workflow management (team
+                                                                  access)
+
+  Dashboard       dashboard.corpfit.cloud                         Mission control for Bashar +
+                                                                  Ammar
+
+  Dashboard API   dashboard.corpfit.cloud/webhook/dashboard-api   GET stats/data
+
+  Analytics       dashboard.corpfit.cloud/analytics               Chart.js analytics page
+  ---------------------------------------------------------------------------------------------
+
+**3.4 Cloudflare Tunnel**
+
+  -----------------------------------------------------------------------
+  **Property**     **Value**
+  ---------------- ------------------------------------------------------
+  Tunnel UUID      91611db9
+
+  Named Tunnel     corpfit-n8n
+
+  Routes           corpfit.cloud, n8n.corpfit.cloud,
+                   dashboard.corpfit.cloud
+
+  SSL/TLS Mode     Full (strict)
+
+  Auto-start       Systemd service enabled (auto-start on boot)
+  -----------------------------------------------------------------------
+
+**3.5 API Keys & Credentials**
+
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  **Service**          **Key / Token**                                                                                                **Status**   **Used In**
+  -------------------- -------------------------------------------------------------------------------------------------------------- ------------ -----------------------
+  Anthropic API        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   ACTIVE       E2 content gen + QA
+  (Claude)                                                                                                                                         gates (E1 scoring)
+
+  fal.ai (Kling video) 909a576d-a23f-492d-ad36-67ea55507c89:19ae04dad035d0ba0bbc755f302c5d4f                                          ACTIVE       E3 Video Producer
+                                                                                                                                                   (Kling 2.6)
+
+  Telegram Bot         8503417924:AAFUMvEbisLKjijhFdQjaCMRvoKX77zBrC8                                                                 ACTIVE       All Telegram
+                                                                                                                                                   notifications +
+                                                                                                                                                   commands
+
+  Telegram Chat ID     8484541577                                                                                                     ACTIVE       Target chat for all bot
+                                                                                                                                                   messages
+
+  Cloudflare Workers   xrAne5nTXBxFvZW5_PBicLLznoGOFnnBAZW03Bm9                                                                       ACTIVE       wrangler CLI deployment
+
+  TikTok API           PENDING_SETUP                                                                                                  PENDING      ORBIT Publisher ---
+                                                                                                                                                   system_config table
+
+  Instagram/Facebook   PENDING_SETUP                                                                                                  PENDING      ORBIT Publisher ---
+  API                                                                                                                                              system_config table
+
+  LinkedIn Marketing   PENDING_SETUP                                                                                                  PENDING      ORBIT Publisher ---
+  API                                                                                                                                              system_config table
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+**3.6 n8n Login**
+
+  -----------------------------------------------------------------------
+  **Field**        **Value**
+  ---------------- ------------------------------------------------------
+  URL              n8n.corpfit.cloud
+
+  Email            skahoush2@outlook.com
+
+  Password         Kahoushshadi1986
+  -----------------------------------------------------------------------
+
+**3.7 Dashboard Login**
+
+  -----------------------------------------------------------------------
+  **Field**        **Value**
+  ---------------- ------------------------------------------------------
+  URL              dashboard.corpfit.cloud
+
+  Username         corpfit
+
+  Password         quantum2026
+
+  Cloudflare       2aed032eb4d82bdc73c9a2a5195c9c58
+  Worker Account   
+  ID               
+  -----------------------------------------------------------------------
+
+**4. DATABASE SCHEMA (PostgreSQL)**
+
+Database: corpfit_db \| 8 tables total
+
+**4.1 trend_board**
+
+Stores discovered wellness trends from ELECTRON-1.
+
+  ----------------------------------------------------------------------------------
+  **Column**    **Type**    **Nullable**   **Description**
+  ------------- ----------- -------------- -----------------------------------------
+  id            SERIAL PK   No             Auto-increment primary key
+
+  trend_name    TEXT        No             Trend title
+
+  score         INTEGER     No             Relevance score (0--100)
+
+  module        TEXT        No             Steps / Workouts / Meals / Check-in /
+                                           Events
+
+  source        TEXT        Yes            Source where trend was discovered
+
+  created_at    TIMESTAMP   No             Discovery timestamp (DEFAULT NOW())
+  ----------------------------------------------------------------------------------
+
+**4.2 content_briefs**
+
+Production briefs created by QUANTUM planner.
+
+  -------------------------------------------------------------------------------------
+  **Column**       **Type**    **Nullable**   **Description**
+  ---------------- ----------- -------------- -----------------------------------------
+  id               SERIAL PK   No             Auto-increment primary key
+
+  topic            TEXT        No             Content topic
+
+  module           TEXT        No             Target module
+                                              (Steps/Workouts/Meals/Check-in/Events)
+
+  platform         TEXT        No             TikTok / Instagram / LinkedIn / YouTube
+
+  funnel           TEXT        No             B2C or B2B
+
+  duration         INTEGER     Yes            Target video duration in seconds
+
+  status           TEXT        No             pending / approved / rejected / published
+                                              / killed
+
+  brief_data       JSONB       Yes            Full brief JSON (trend score, angle,
+                                              hooks)
+
+  content_log_id   INTEGER FK  Yes            FK to content_logs.id (set after E2 runs)
+
+  created_at       TIMESTAMP   No             Creation timestamp
+  -------------------------------------------------------------------------------------
+
+**4.3 content_logs**
+
+Generated content from ELECTRON-2. Includes full cost tracking.
+
+  ------------------------------------------------------------------------------------
+  **Column**      **Type**    **Nullable**   **Description**
+  --------------- ----------- -------------- -----------------------------------------
+  id              SERIAL PK   No             Auto-increment primary key
+
+  brief_id        INTEGER FK  No             FK to content_briefs.id
+
+  script          TEXT        Yes            Full timed video script
+
+  hook            TEXT        Yes            Primary hook (best of 3)
+
+  hooks_json      JSONB       Yes            All 3 hooks as JSON array
+
+  cta             TEXT        Yes            Call to action text
+
+  caption_short   TEXT        Yes            Short social caption
+
+  caption_long    TEXT        Yes            Long caption with hashtags
+
+  onscreen_text   TEXT        Yes            On-screen overlay text
+
+  storyboard      TEXT        Yes            Scene-by-scene visual description
+
+  disclaimer      TEXT        Yes            Health/safety disclaimer
+
+  qa_scores       JSONB       Yes            Gate 1/2/3 results (pass, violations,
+                                             confidence)
+
+  qa_passed       BOOLEAN     Yes            Overall QA pass/fail
+
+  model_used      TEXT        Yes            claude-sonnet-4-20250514
+
+  input_tokens    INTEGER     Yes            Actual input tokens from API response
+
+  output_tokens   INTEGER     Yes            Actual output tokens from API response
+
+  e2_cost         NUMERIC     Yes            Content generation cost (USD)
+
+  qa_cost         NUMERIC     Yes            QA gates cost (USD) --- 3 Haiku calls
+
+  total_cost      NUMERIC     Yes            e2_cost + qa_cost
+
+  created_at      TIMESTAMP   No             Generation timestamp
+  ------------------------------------------------------------------------------------
+
+**4.4 publish_logs**
+
+Video production records from ELECTRON-3.
+
+  -------------------------------------------------------------------------------------
+  **Column**       **Type**    **Nullable**   **Description**
+  ---------------- ----------- -------------- -----------------------------------------
+  id               SERIAL PK   No             Auto-increment primary key
+
+  brief_id         INTEGER FK  No             FK to content_briefs.id
+
+  content_log_id   INTEGER FK  No             FK to content_logs.id
+
+  video_tool       TEXT        No             kling / veo / heygen / synthesia / pika
+
+  video_url        TEXT        Yes            URL of produced video file
+
+  status           TEXT        No             processing / ready_to_post / failed
+
+  resolution       TEXT        Yes            e.g. 1080x1920
+
+  duration_sec     INTEGER     Yes            Actual video duration
+
+  created_at       TIMESTAMP   No             Production timestamp
+  -------------------------------------------------------------------------------------
+
+**4.5 schedule_logs**
+
+ORBIT scheduling records --- one row per platform per video.
+
+  ----------------------------------------------------------------------------------------
+  **Column**          **Type**      **Nullable**   **Description**
+  ------------------- ------------- -------------- ---------------------------------------
+  id                  SERIAL PK     No             Auto-increment primary key
+
+  publish_log_id      INTEGER FK    No             FK to publish_logs.id
+
+  content_log_id      INTEGER FK    No             FK to content_logs.id
+
+  brief_id            INTEGER FK    No             FK to content_briefs.id
+
+  platform            VARCHAR(20)   No             tiktok / instagram / linkedin
+
+  status              VARCHAR(30)   No             queued / uploading / processing / live
+                                                   / failed / held
+
+  platform_post_id    TEXT          Yes            Native post ID from platform API
+
+  platform_post_url   TEXT          Yes            Public URL of the live post
+
+  caption             TEXT          Yes            Caption sent with the post
+
+  hashtags            TEXT          Yes            Hashtags (JSON array)
+
+  scheduled_at        TIMESTAMPTZ   Yes            When post is scheduled for
+
+  posted_at           TIMESTAMPTZ   Yes            When post actually went live
+
+  error_message       TEXT          Yes            Error details if status = failed
+
+  retry_count         INTEGER       No             Number of retry attempts (max 3)
+
+  mode_used           VARCHAR(10)   No             manual / semi / auto
+
+  operator_id         TEXT          Yes            Telegram user ID of approving operator
+
+  created_at          TIMESTAMPTZ   No             Row creation timestamp
+
+  updated_at          TIMESTAMPTZ   No             Last update timestamp
+  ----------------------------------------------------------------------------------------
+
+**4.6 error_logs**
+
+  --------------------------------------------------------------------------
+  **Column**      **Type**    **Description**
+  --------------- ----------- ----------------------------------------------
+  id              SERIAL PK   Auto-increment primary key
+
+  workflow        TEXT        Workflow name that triggered the error
+
+  error_type      TEXT        API_FAILURE / DB_ERROR / TIMEOUT / etc.
+
+  error_message   TEXT        Full error message
+
+  retry_count     INTEGER     Number of retries attempted
+
+  resolved        BOOLEAN     True once manually/auto-resolved
+
+  created_at      TIMESTAMP   Error timestamp
+  --------------------------------------------------------------------------
+
+**4.7 system_config**
+
+Key-value store for runtime configuration. Modified via SQL or
+Dashboard.
+
+  ---------------------------------------------------------------------------------------
+  **Key**                   **Current Value**           **Purpose**
+  ------------------------- --------------------------- ---------------------------------
+  orbit_mode                manual                      ORBIT scheduling mode: manual /
+                                                        semi / auto
+
+  orbit_platforms_enabled   tiktok,instagram,linkedin   Which platforms ORBIT publishes
+                                                        to
+
+  tiktok_access_token       PENDING_SETUP               TikTok Content Posting API token
+
+  instagram_access_token    PENDING_SETUP               Instagram Graph API token
+
+  instagram_user_id         PENDING_SETUP               Instagram Business Account ID
+
+  linkedin_access_token     PENDING_SETUP               LinkedIn Marketing API token
+
+  linkedin_org_id           PENDING_SETUP               LinkedIn Organization/Company
+                                                        Page ID
+  ---------------------------------------------------------------------------------------
+
+**4.8 api_costs**
+
+Granular per-call cost tracking for all Anthropic API usage.
+
+  --------------------------------------------------------------------------
+  **Column**      **Type**    **Description**
+  --------------- ----------- ----------------------------------------------
+  id              SERIAL PK   Auto-increment primary key
+
+  brief_id        INTEGER FK  FK to content_briefs.id
+
+  call_type       TEXT        e2_generation / gate1_health / gate2_brand /
+                              gate3_audience
+
+  model           TEXT        Model used (sonnet-4 or haiku-4.5)
+
+  input_tokens    INTEGER     Actual input token count
+
+  output_tokens   INTEGER     Actual output token count
+
+  cost_usd        NUMERIC     Cost in USD for this call
+
+  created_at      TIMESTAMP   Timestamp of the API call
+  --------------------------------------------------------------------------
+
+**5. WORKFLOW INVENTORY (15 Active --- Verified from n8n Screenshots)**
+
+All workflows confirmed Published status. Node names taken directly from
+n8n editor screenshots.
+
+  -------------------------------------------------------------------------------------------------
+  **\#**   **Workflow Name **Version**   **Trigger    **Nodes      **Purpose**
+           (n8n)**                       Type**       (Actual)**   
+  -------- --------------- ------------- ------------ ------------ --------------------------------
+  1        ELECTRON-1      v1            Schedule +   13           Discovers trends via 8 sources,
+           Trend Scout                   Webhook +                 scores with Haiku, stores in
+                                         Manual                    trend_board, triggers QUANTUM
+
+  2        QUANTUM Content v1            Webhook +    9            Reads trends, builds planner
+           Planner                       Schedule +                prompt, calls Sonnet 4,
+                                         Manual                    formats + inserts briefs,
+                                                                   triggers E2, notifies Telegram
+
+  3        Brief Approval  v1            Schedule     12           Polls Telegram, routes by type
+           Handler                       (30s) +                   (Rules), handles approval
+                                         Manual                    branch + ORBIT branch
+
+  4        ELECTRON-2      v1            Webhook +    15           Parse brief → Qdrant → Assemble
+           Content                       Manual                    Prompt → Claude API → Parse
+           Generator                                               Output → Banned Phrase Check → 3
+                                                                   QA Gates → Format → Store →
+                                                                   Respond
+
+  5        ELECTRON-3      v1            Webhook      8            Load Content → Fetch from DB →
+           Video Producer                                          Select Video Tool → Generate
+                                                                   Video → Store to publish_logs →
+                                                                   Telegram Preview → Webhook
+                                                                   Response
+
+  6        ELECTRON-4      v1            Schedule +   7            Fetch Ready Videos → If (has
+           Scheduler                     Manual                    videos?) → Video Quality Check →
+                                                                   Get ORBIT Mode → Send ORBIT
+                                                                   Telegram → Insert Schedule Logs
+
+  7        ORBIT Publisher v1            Schedule +   4            3 triggers → ORBIT Processor
+                                         Webhook +                 (single Code node handles all
+                                         Manual                    publishing logic)
+
+  8        Dashboard API   v1            Webhook GET  4            Webhook → Query All Data →
+                                                                   Format Response → Respond to
+                                                                   Webhook
+
+  9        Dashboard       v1            Webhook POST 5            Webhook → Process Action →
+           Actions                                                 Execute Action → Format Response
+                                                                   → Respond to Webhook
+
+  10       Analytics API   v1            Webhook GET  4            Webhook → Fetch All Analytics →
+                                                                   Format Analytics → Respond to
+                                                                   Webhook
+
+  11       Error Logger    v1            Webhook POST 3            Webhook → Store Error
+                                                                   (PostgreSQL) → Respond to
+                                                                   Webhook
+
+  12       System Health   v1            Webhook POST 3            Webhook → Query Stats
+           Check                                                   (PostgreSQL) → Send Telegram
+                                                                   Report
+
+  13       Stale Brief     v1            Webhook POST 3            Webhook → Query Stale
+           Check                                                   (PostgreSQL) → Send Stale Report
+
+  14       QUANTUM Backup  v1            Daily 3AM +  4            Daily 3AM Trigger + Webhook
+           Manager                       Webhook +                 Trigger + Manual → Backup
+                                         Manual                    Processor (single Code node)
+
+  15       QUANTUM         v1            Every 8      3            Every 8 Hours + Manual →
+           Watchdog                      Hours +                   Watchdog Monitor (single Code
+                                         Manual                    node)
+  -------------------------------------------------------------------------------------------------
+
+**6. WORKFLOW DETAILS --- EXACT NODE NAMES FROM n8n**
+
+**6.1 ELECTRON-1 Trend Scout (v1)**
+
+Discovers trending wellness topics from 8 sources daily. Fires at 9:30
+AM Cairo time (7:30 UTC). Auto-chains to QUANTUM via webhook.
+
+  ---------------------------------------------------------------------------
+  **Node Name      **Type**        **Detail**
+  (exact)**                        
+  ---------------- --------------- ------------------------------------------
+  Schedule Trigger Schedule        Cron: 0 30 7 \* \* \* (UTC) = 9:30 AM
+                   Trigger         Cairo (UTC+2)
+
+  Webhook          Webhook         POST --- allows manual trigger via HTTP.
+                                   Also used by auto-chain from E1 on
+                                   re-runs.
+
+  When clicking    Manual Trigger  For testing in n8n editor
+  \'Execute                        
+  workflow\'                       
+
+  RSS Nerd Fitness RSS Feed Node   Pulls articles from Nerd Fitness RSS feed
+
+  RSS MyFitnessPal RSS Feed Node   Pulls from MyFitnessPal blog RSS
+
+  Reddit Fitness   HTTP Request    GET https://www.reddit.com/r/fitness/.json
+                                   --- trending posts
+
+  Reddit LoseIt    HTTP Request    GET https://www.reddit.com/r/loseit/.json
+                                   --- weight loss trends
+
+  RSS ACE Fitness  RSS Feed Node   Pulls from ACE Fitness blog RSS
+
+  PubMed Search    HTTP Request    GET https://eutils.ncbi.nlm.nih.gov/\...
+                                   --- research trends
+
+  TikTok Trends    HTTP Request /  TikTok wellness trend signals
+                   RSS             
+
+  Instagram Trends HTTP Request /  Instagram wellness trend signals
+                   RSS             
+
+  Merge All        Merge Node      Mode: append --- combines all 8 source
+  Sources                          outputs into one list
+
+  Normalize Data   Code Node       Standardizes fields across all sources
+                                   into uniform format
+
+  Haiku Score      Code Node       Calls Claude Haiku 4.5 to score each trend
+  Trends           (httpRequest)   0-100 by relevance, safety, module fit.
+                                   Timeout: 120s.
+
+  Store to         Code Node       Formats data for PostgreSQL INSERT
+  trend_board                      
+
+  Table:           PostgreSQL Node INSERT scored trends into trend_board
+  trend_board                      table
+
+  Trigger QUANTUM  Code Node       POST to QUANTUM webhook --- passes trend
+                   (httpRequest)   board JSON to kick off brief creation
+  ---------------------------------------------------------------------------
+
+**Note:** The description sticky note in n8n reads: \'this is the trend
+scout searching for trends in top 6 free sites then merge all results
+format them then send them to Haiku to check the trend score if success
+go to story board create the final items to be saved into table trend
+board\'
+
+**6.2 QUANTUM Content Planner (v1)**
+
+Reads the trend board, builds a planner prompt, calls Claude Sonnet 4,
+creates 3 briefs, inserts to DB, auto-triggers E2, and notifies
+Telegram.
+
+  ---------------------------------------------------------------------------
+  **Node Name      **Type**        **Detail**
+  (exact)**                        
+  ---------------- --------------- ------------------------------------------
+  Webhook          Webhook         POST --- primary trigger from E1\'s
+                                   \'Trigger QUANTUM\' node
+
+  Schedule Trigger Schedule        Fallback daily schedule trigger
+                   Trigger         
+
+  When clicking    Manual Trigger  For testing in n8n editor
+  \'Execute                        
+  workflow\'                       
+
+  Execute a SQL    PostgreSQL Node executeQuery --- reads current trend_board
+  query                            for context
+
+  Fetch Existing   PostgreSQL Node executeQuery --- loads recent brief topics
+  Briefs                           for dedup context
+
+  Build Planner    Code Node       Assembles Claude Sonnet 4 prompt with
+  Prompt                           trends + existing briefs + dedup
+                                   instructions
+
+  Call Sonnet      Code Node       Claude Sonnet 4 --- selects top trends,
+  Planner          (httpRequest)   assigns module/platform/funnel/duration,
+                                   outputs 3 briefs JSON
+
+  Format Briefs    Code Node       Parses 3 brief objects from Claude
+                                   response, structures for INSERT
+
+  Insert Briefs    PostgreSQL Node insert --- adds 3 rows to content_briefs
+                                   table (status: pending)
+
+  Auto-Trigger E2  Code Node       Automatically POSTs to E2 webhook for each
+                   (httpRequest)   approved brief --- no manual step needed
+
+  Telegram Notify  Code Node       Sends 3 formatted brief messages to
+                   (httpRequest)   Telegram with \[Approve\] \[Reject\]
+                                   inline keyboard buttons
+  ---------------------------------------------------------------------------
+
+**6.3 Brief Approval Handler (v1)**
+
+The central Telegram controller. Polls every 30 seconds. Routes all
+interactions through a Rules-based router into two branches: the
+Approval Branch (for brief/content decisions) and the ORBIT Branch (for
+scheduling/publishing decisions).
+
+  ---------------------------------------------------------------------------
+  **Node Name      **Type**        **Detail**
+  (exact)**                        
+  ---------------- --------------- ------------------------------------------
+  Schedule Trigger Schedule        Every 30 seconds --- polls Telegram for
+                   Trigger         new updates
+
+  manual trigger   Manual Trigger  For testing in n8n editor
+
+  Check Telegram   Code Node       Single code block: calls Telegram
+  Updates1                         getUpdates API, extracts callback_query +
+                                   message actions, routes by type. Key
+                                   pattern: all logic in ONE node.
+
+  Route by Type    Switch Node     Routes to: Approval Branch
+                   (Rules)         (approve/reject/publish/kill) OR ORBIT
+                                   Branch (platform selection)
+
+  --- APPROVAL                     
+  BRANCH ---                       
+
+  Process Approval Code Node       Determines action type (approve / reject /
+                                   publish / kill). Extracts brief_id,
+                                   content_log_id.
+
+  Update Brief     PostgreSQL Node executeQuery --- UPDATE content_briefs SET
+  Status                           status = \[action\] WHERE id =
+                                   \[brief_id\]
+
+  Telegram Confirm Code Node       Sends confirmation message to Telegram
+                                   (\'Brief approved!\' / \'Brief rejected!\'
+                                   etc.)
+
+  Check If         Code Node       IF action == \'approve\' → continue to E2.
+  Approved                         IF action == \'publish\' → skip to E3. IF
+                                   action == reject/kill → stop.
+
+  Call E2 Webhook  Code Node       POSTs to E2 webhook with brief_id +
+                   (httpRequest)   brief_data to trigger content generation
+
+  Link Content to  PostgreSQL Node executeQuery --- UPDATE content_briefs SET
+  Brief                            content_log_id = \[id\] WHERE id =
+                                   \[brief_id\]
+
+  Send Content     Code Node       Pulls content from \'Call E2 Webhook\'
+  Preview          (httpRequest)   node result. Sends full 10-field content
+                                   preview to Telegram with \[Publish\]
+                                   \[Kill\] buttons.
+
+  Call E3 Webhook  Code Node       POSTs to E3 webhook when operator taps
+                   (httpRequest)   Publish, triggering video production
+
+  --- ORBIT BRANCH                 
+  ---                              
+
+  ORBIT Process    Code Node       Handles platform selection callbacks
+                                   (tiktok/instagram/linkedin/all/hold).
+                                   Builds schedule_logs payload.
+
+  ORBIT Execute    PostgreSQL Node executeQuery --- INSERT rows into
+  Update                           schedule_logs (status: queued) for each
+                                   selected platform
+
+  ORBIT Telegram   Code Node       Sends Telegram confirmation of scheduling
+  Confirm                          (e.g. \'Queued for TikTok + Instagram
+                                   ✅\')
+  ---------------------------------------------------------------------------
+
+**Key Pattern:** Check Telegram Updates1 uses single Code node --- all
+Telegram polling and routing in one JavaScript block. Avoids n8n
+multi-node data passthrough issues.
+
+**6.4 ELECTRON-2 Content Generator (v1)**
+
+The AI content engine. 15 nodes in a linear chain. Generates full
+content package through Qdrant knowledge retrieval → Claude Sonnet 4 → 3
+QA Gates → PostgreSQL storage.
+
+  ---------------------------------------------------------------------------
+  **Node Name      **Type**        **Detail**
+  (exact)**                        
+  ---------------- --------------- ------------------------------------------
+  Webhook          Webhook         POST --- triggered by Brief Approval
+                                   Handler \'Call E2 Webhook\' node
+
+  Webhook Parse    Code Node       Extracts brief data from webhook body:
+  Brief                            topic, module, platform, funnel, duration,
+                                   brief_id
+
+  When clicking    Manual Trigger  For testing
+  \'Execute                        
+  workflow\'                       
+
+  Parse Brief      Set Node        Manually set brief fields for testing:
+  (manual)                         module, platform, funnel, topic, duration
+
+  CorpFit Qdrant   Qdrant Vector   Semantic search on funfit_brand_rules
+                   Store           collection. Returns 15 most relevant brand
+                                   rules. Uses Embeddings Ollama sub-node
+                                   (nomic-embed-text).
+
+  Embeddings       Ollama          nomic-embed-text model at ollama:11434 ---
+  Ollama           Embeddings      for brand rules semantic search
+
+  Get Banned       Qdrant Vector   Loads all 71 entries from
+  Phrases          Store           funfit_banned_phrases collection. Uses
+                                   Embeddings Ollama1 sub-node.
+
+  Embeddings       Ollama          nomic-embed-text model at ollama:11434 ---
+  Ollama1          Embeddings      for banned phrases load
+
+  Assemble Prompt  Code Node       Merges: static core (\~1,200 words) +
+                                   dynamic CTA rules (B2C/B2B) + platform
+                                   tone block + 15 brand rules + 71 banned
+                                   phrases + brief. Output: systemPrompt +
+                                   userMessage.
+
+  Call Claude API  Code Node       Calls Anthropic API. Model:
+                   (httpRequest)   claude-sonnet-4-20250514. max_tokens:
+                                   4096. temp: 0.7. Captures actual
+                                   input_tokens + output_tokens from
+                                   response.usage.
+
+  Parse Output     Code Node       Extracts 10 structured fields from Claude
+                                   raw text: hooks(3), script, onscreen_text,
+                                   storyboard, caption_short, caption_long,
+                                   cta, disclaimer
+
+  Banned Phrase    Code Node       Scans ALL 10 content fields against all 71
+  Check                            banned phrases. Output: qa_passed (bool) +
+                                   violations list.
+
+  QA Gate 1 Health Code Node       Haiku 4.5 --- health claims check: medical
+                   (httpRequest)   advice, cure language, guaranteed
+                                   outcomes. CRITICAL severity.
+
+  QA Gate 2 Brand  Code Node       Haiku 4.5 --- brand tone check:
+                   (httpRequest)   platform-aware Fun Test, DO NOT FAIL safe
+                                   list, lenient template. HIGH severity.
+
+  QA Gate 3        Code Node       Haiku 4.5 + 6 hard-coded checks: CorpFit
+  Audience         (httpRequest)   in CTA, CorpFit in captions, no \'free\',
+                                   B2C/B2B CTA match, no FunFit. HIGH
+                                   severity.
+
+  Format for       Code Node       Structures all 28 columns for PostgreSQL
+  Storage                          INSERT. Calculates e2_cost, qa_cost,
+                                   total_cost from actual token counts.
+
+  Store to         PostgreSQL Node insert --- writes full content record to
+  content_logs                     content_logs (28 columns)
+
+  Webhook Response Respond to      Returns content JSON to calling workflow
+                   Webhook Node    (Brief Approval Handler). MUST use this
+                                   node --- webhook trigger set to \'Using
+                                   Respond to Webhook Node\'.
+  ---------------------------------------------------------------------------
+
+**6.5 ELECTRON-3 Video Producer (v1)**
+
+Pure linear 8-node chain. Receives content_log_id, fetches data, routes
+to correct video tool, generates video, stores result, notifies
+Telegram.
+
+  ---------------------------------------------------------------------------
+  **Node Name      **Type**        **Detail**
+  (exact)**                        
+  ---------------- --------------- ------------------------------------------
+  E3 Webhook       Webhook         POST --- triggered by Brief Approval
+  Trigger                          Handler \'Call E3 Webhook\' node when
+                                   operator taps Publish
+
+  Load Content     Code Node       Extracts content_log_id + brief_id from
+                                   webhook payload
+
+  Fetch Content    PostgreSQL Node executeQuery --- SELECT content_logs JOIN
+  from DB                          content_briefs WHERE content_logs.id =
+                                   \[content_log_id\]
+
+  Select Video     Code Node       Routing logic: module + funnel + platform
+  Tool                             → video tool. Returns: tool name + API
+                                   params + prompt.
+
+  Generate Video   Code Node       Calls selected tool\'s API: Kling via
+                   (httpRequest)   fal.ai (909a576d\...) / HeyGen / Synthesia
+                                   / Veo / Pika. Polls until complete.
+
+  Store to         PostgreSQL Node executeQuery --- INSERT into publish_logs
+  publish_logs                     (video_tool, video_url, resolution,
+                                   duration, status=ready_to_post)
+
+  Telegram Preview Code Node       Sends video URL + content summary to
+                   (httpRequest)   Telegram. Video URL + brief details
+                                   formatted for operator review.
+
+  Webhook Response Respond to      Returns result to calling workflow
+                   Webhook Node    
+  ---------------------------------------------------------------------------
+
+**6.6 ELECTRON-4 Scheduler (v1)**
+
+Runs on schedule, detects ready videos, performs quality check, reads
+ORBIT mode, sends platform selection to Telegram, creates schedule_logs
+entries.
+
+  ---------------------------------------------------------------------------
+  **Node Name      **Type**        **Detail**
+  (exact)**                        
+  ---------------- --------------- ------------------------------------------
+  Schedule Trigger Schedule        Runs every 5 minutes (or configured
+                   Trigger         interval)
+
+  When clicking    Manual Trigger  For testing
+  \'Execute                        
+  workflow\'                       
+
+  Fetch Ready      PostgreSQL Node executeQuery --- SELECT from publish_logs
+  Videos                           WHERE status = \'ready_to_post\'
+
+  If               If Node         Checks if Fetch Ready Videos returned any
+                                   rows. true → proceed. false → stop
+                                   (nothing to schedule).
+
+  Video Quality    Code Node       Verifies: resolution ≥ 1080p, format =
+  Check                            MP4, duration within platform limits. 3
+                                   retries with exponential backoff (2s, 4s,
+                                   6s).
+
+  Get ORBIT Mode   PostgreSQL Node executeQuery --- SELECT value FROM
+                                   system_config WHERE key = \'orbit_mode\'.
+                                   Returns: manual / semi / auto.
+
+  Send ORBIT       Code Node       Sends Telegram message with platform
+  Telegram         (httpRequest)   selection buttons: \[TikTok\]
+                                   \[Instagram\] \[LinkedIn\] \[All\]
+                                   \[Hold\]. 3 retries with backoff.
+
+  Insert Schedule  Code Node       POSTs to Dashboard Actions webhook.
+  Logs             (httpRequest)   Creates schedule_logs row(s) for selected
+                                   platforms (status: queued). Error-logger
+                                   on failure.
+  ---------------------------------------------------------------------------
+
+**6.7 ORBIT Publisher (v1 --- Workflow ID: bzC27k33)**
+
+Minimal 4-node design. All publishing intelligence is consolidated in
+the single ORBIT Processor Code node --- same single-node pattern as
+Check Telegram Updates1.
+
+  -----------------------------------------------------------------------
+  **Node Name      **Type**    **Detail**
+  (exact)**                    
+  ---------------- ----------- ------------------------------------------
+  Schedule Trigger Schedule    Runs every 5 minutes
+                   Trigger     
+
+  When clicking    Manual      For testing + manual /orbit Telegram
+  \'Execute        Trigger     command
+  workflow\'                   
+
+  Webhook Trigger  Webhook     POST --- allows external trigger via
+                               /webhook/orbit-publish URL
+
+  ORBIT Processor  Code Node   All logic in one block: (1) Fetch queued
+                   (single)    items from dashboard-api (2) Mark
+                               status=\'publishing\' (3) Call platform
+                               API \[TikTok/IG/LinkedIn\] (4) Update to
+                               \'published\' + store post_id/url OR
+                               increment retry_count (5) Send per-item +
+                               summary Telegram notifications
+  -----------------------------------------------------------------------
+
+**Platform status:** Real API calls use PENDING_SETUP credentials.
+Currently simulated --- publish calls return mock post IDs until
+developer accounts are registered.
+
+**6.8 Dashboard API (v1)**
+
+Simple 4-node read-only API. Powers all data display in the Cloudflare
+Worker dashboard.
+
+  ------------------------------------------------------------------------
+  **Node Name      **Type**     **Detail**
+  (exact)**                     
+  ---------------- ------------ ------------------------------------------
+  Webhook          Webhook      GET --- receives requests from Cloudflare
+                                Worker dashboard frontend
+
+  Query All Data   PostgreSQL   executeQuery --- runs comprehensive SQL
+                   Node         across all tables: counts, recent briefs,
+                                content_logs, publish_logs, schedule_logs
+                                (with JOIN), error_logs
+
+  Format Response  Code Node    Structures query results into
+                                dashboard-friendly JSON object
+
+  Respond to       Respond to   Returns formatted JSON to Cloudflare
+  Webhook          Webhook Node Worker
+  ------------------------------------------------------------------------
+
+**6.9 Dashboard Actions (v1)**
+
+5-node POST handler. Executes all write operations triggered from
+dashboard buttons or other workflows.
+
+  ------------------------------------------------------------------------
+  **Node Name      **Type**     **Detail**
+  (exact)**                     
+  ---------------- ------------ ------------------------------------------
+  Webhook          Webhook      POST --- receives action requests from
+                                dashboard UI or internal workflows
+
+  Process Action   Code Node    Parses action type from body: approve /
+                                reject / publish / kill /
+                                create_schedule_log / update_schedule_log
+                                / etc. Builds appropriate SQL.
+
+  Execute Action   PostgreSQL   executeQuery --- runs the mutation SQL
+                   Node         generated by Process Action
+
+  Format Response  Code Node    Structures result into JSON response
+                                (success: true, affected rows, etc.)
+
+  Respond to       Respond to   Returns result to caller
+  Webhook          Webhook Node 
+  ------------------------------------------------------------------------
+
+**6.10 Analytics API (v1)**
+
+Mirrors Dashboard API structure --- dedicated endpoint for chart data
+only.
+
+  ------------------------------------------------------------------------
+  **Node Name      **Type**     **Detail**
+  (exact)**                     
+  ---------------- ------------ ------------------------------------------
+  Webhook          Webhook      GET --- called by Analytics page at
+                                /analytics on dashboard.corpfit.cloud
+
+  Fetch All        PostgreSQL   executeQuery --- complex SQL: production
+  Analytics        Node         timeline (by day), cost totals (from
+                                content_logs cost columns), counts by
+                                module, counts by platform, QA compliance
+                                trend over time
+
+  Format Analytics Code Node    Structures query results into
+                                Chart.js-compatible JSON arrays
+
+  Respond to       Respond to   Returns chart data arrays to Cloudflare
+  Webhook          Webhook Node Worker Analytics page
+  ------------------------------------------------------------------------
+
+**6.11 Error Logger (v1)**
+
+3-node centralized error sink. Every workflow\'s error handler POSTs
+here.
+
+  ------------------------------------------------------------------------
+  **Node Name      **Type**     **Detail**
+  (exact)**                     
+  ---------------- ------------ ------------------------------------------
+  Webhook          Webhook      POST --- receives error payloads from all
+                                workflows. URL: /webhook/error-logger
+
+  Store Error      PostgreSQL   executeQuery --- INSERT into error_logs
+                   Node         (workflow, error_type, error_message,
+                                retry_count, resolved=false)
+
+  Respond to       Respond to   Acknowledges receipt so calling workflow
+  Webhook          Webhook Node can continue
+  ------------------------------------------------------------------------
+
+**6.12 System Health Check (v1)**
+
+Triggered by /status Telegram command or dashboard \'System Status\'
+button.
+
+  ---------------------------------------------------------------------------
+  **Node Name      **Type**        **Detail**
+  (exact)**                        
+  ---------------- --------------- ------------------------------------------
+  Webhook          Webhook         POST --- URL: /webhook/health-check
+
+  Query Stats      PostgreSQL Node executeQuery --- counts from all tables:
+                                   trends, briefs (by status), content (by
+                                   qa_passed), videos, errors (unresolved),
+                                   schedule_logs (by status)
+
+  Send Telegram    Code Node       Formats comprehensive health dashboard and
+  Report           (httpRequest)   sends via Telegram Bot API to chat
+                                   8484541577
+  ---------------------------------------------------------------------------
+
+**6.13 Stale Brief Check (v1)**
+
+Triggered by /stale Telegram command or dashboard \'Check Stuck\'
+button.
+
+  ---------------------------------------------------------------------------
+  **Node Name      **Type**        **Detail**
+  (exact)**                        
+  ---------------- --------------- ------------------------------------------
+  Webhook          Webhook         POST --- URL: /webhook/health-check (same
+                                   endpoint as System Health Check,
+                                   distinguished by body payload)
+
+  Query Stale      PostgreSQL Node executeQuery --- SELECT briefs WHERE
+                                   status IN (\'pending\',\'approved\') AND
+                                   created_at \< NOW() - INTERVAL \'24
+                                   hours\'
+
+  Send Stale       Code Node       Sends list of stale briefs to Telegram
+  Report           (httpRequest)   with brief IDs, topics, ages, current
+                                   status
+  ---------------------------------------------------------------------------
+
+**6.14 QUANTUM Backup Manager (v1 --- Workflow ID: zrDU8KXe)**
+
+Runs daily at 3 AM. All logic consolidated in single Backup Processor
+Code node.
+
+  -----------------------------------------------------------------------
+  **Node Name      **Type**    **Detail**
+  (exact)**                    
+  ---------------- ----------- ------------------------------------------
+  Daily 3AM        Schedule    Fires at 3:00 AM daily
+  Trigger          Trigger     
+
+  When clicking    Manual      For testing / manual backup
+  \'Execute        Trigger     
+  workflow\'                   
+
+  Webhook Trigger  Webhook     POST --- allows backup via /backup
+                               Telegram command
+
+  Backup Processor Code Node   Single node: (1) Runs pg_dump via Docker
+                   (single)    exec (2) Counts active workflows via n8n
+                               API (3) Checks service health (4) Sends
+                               summary report to Telegram with all stats
+  -----------------------------------------------------------------------
+
+**6.15 QUANTUM Watchdog (v1 --- Workflow ID: hHAhgkKp)**
+
+Minimal 3-node service monitor. Fires every 8 hours.
+
+  -----------------------------------------------------------------------
+  **Node Name      **Type**    **Detail**
+  (exact)**                    
+  ---------------- ----------- ------------------------------------------
+  Every 8 Hours    Schedule    Fires every 8 hours
+                   Trigger     
+
+  When clicking    Manual      For testing
+  \'Execute        Trigger     
+  workflow\'                   
+
+  Watchdog Monitor Code Node   Checks all critical services: n8n,
+                   (single)    PostgreSQL, Qdrant, Cloudflare tunnel.
+                               Sends Telegram alert if any service is
+                               down or unresponsive.
+  -----------------------------------------------------------------------
+
+**7. CONTENT SYSTEM**
+
+**7.1 Content Modules (5)**
+
+  -----------------------------------------------------------------------------
+  **Module**   **Description**   **B2C Focus**      **B2B Focus**
+  ------------ ----------------- ------------------ ---------------------------
+  Steps        Walking, activity Personal daily     Employee activity programs,
+               tracking, desk    steps goal,        desk wellness
+               exercises         movement habits    
+
+  Workouts     Exercise          Home/gym workouts, Corporate fitness programs,
+               routines,         motivation         team challenges
+               strength, cardio,                    
+               flexibility                          
+
+  Meals        Nutrition,        Healthy eating     Office nutrition, catered
+               recipes, meal     habits, quick      wellness
+               planning          recipes            
+
+  Check-in     Mental wellness,  Mindfulness, mood  Employee wellbeing, stress
+               habits, daily     tracking, sleep    management
+               reflection                           
+
+  Events       Challenges,       Personal wellness  Corporate wellness events,
+               community         challenges,        team competitions
+               activities, team  leaderboards       
+               competitions                         
+  -----------------------------------------------------------------------------
+
+**7.2 Platform Specifications**
+
+  -------------------------------------------------------------------------------------------
+  **Platform**   **Tone**        **Aspect   **Max        **Format**   **CTA       **CTA
+                                 Ratio**    Duration**                (B2C)**     (B2B)**
+  -------------- --------------- ---------- ------------ ------------ ----------- -----------
+  TikTok         Fun, casual,    9:16       10 min       MP4 H.264    Download    N/A
+                 trendy, high                                         CorpFit     
+                 energy                                                           
+
+  Instagram      Inspiring,      9:16       90 sec       MP4 H.264    Download    N/A
+  Reels          polished,                                            CorpFit     
+                 aspirational                                                     
+
+  LinkedIn       Professional,   16:9 / 1:1 10 min       MP4 H.264    N/A         Book a demo
+                 data-driven,                                                     
+                 zero emojis, no                                                  
+                 slang                                                            
+
+  YouTube        Educational,    16:9       12 hours     MP4 H.264    Download    Book a demo
+                 friendly,                                            CorpFit     
+                 thorough                                                         
+  -------------------------------------------------------------------------------------------
+
+**7.3 CTA Rules (MANDATORY)**
+
+  ----------------------------------------------------------------------------
+  **Funnel**   **Required CTA** **Pattern**                  **Never Use**
+  ------------ ---------------- ---------------------------- -----------------
+  B2C          \'Download       Engagement CTA + Conversion  \'free\', \'Book
+               CorpFit\'        CTA combo. e.g. \'Save this  a demo\', \'Sign
+                                for your next walk ↓         up for free\'
+                                Download CorpFit --- link in 
+                                bio!\'                       
+
+  B2B          \'Book a demo\'  Value statement + Demo CTA.  \'Download\',
+                                e.g. \'See how CorpFit       social engagement
+                                reduces absenteeism → Book a CTAs, \'free
+                                demo at corpfit.cloud\'      trial\'
+  ----------------------------------------------------------------------------
+
+**RULE:** The word \'free\' must NEVER appear in any CTA. This is
+hard-coded in QA Gate 3 and cannot be bypassed.
+
+**7.4 Brand Rules Quick Reference**
+
+  -----------------------------------------------------------------------
+  **Color**        **Hex**     **Usage**
+  ---------------- ----------- ------------------------------------------
+  Coral Orange     #FF6B35     CTAs, buttons, brand elements, highlights
+  (Primary)                    
+
+  Deep Blue        #004E89     Headers, navigation, table headers
+  (Secondary)                  
+
+  Bright Orange    #F7931E     Badges, secondary highlights
+  (Accent)                     
+
+  Dark Navy        #0A1128     App background
+  (Background)                 
+
+  Mid Navy         #1B2B4A     Cards, containers, dashboard surface
+  (Surface)                    
+
+  Success Green    #00C896     Completed states, pass indicators
+
+  Error Red        #FF5252     Errors, failed states
+  -----------------------------------------------------------------------
+
+**7.5 Banned Phrase Categories (71 Total)**
+
+  ------------------------------------------------------------------------------
+  **Category**          **Examples**                       **Severity**
+  --------------------- ---------------------------------- ---------------------
+  banned_medical        cure, treat, heal, fix, diagnose,  CRITICAL
+                        disease, therapy, prescription     
+
+  banned_guarantees     guaranteed, proven, clinically     CRITICAL
+                        proven, 100%, no-fail              
+
+  banned_weight         lose X pounds, burn fat, shred,    HIGH
+                        get skinny, belly fat gone         
+
+  banned_antiaging      reverse aging, anti-aging, look    HIGH
+                        younger, turn back the clock       
+
+  banned_detox          detox, cleanse, flush toxins,      HIGH
+                        purify your body                   
+
+  banned_shaming        fat, skinny, ugly, disgusting,     HIGH
+                        lazy, weak, flabby                 
+
+  banned_pressure       you must, you need to, no excuses, MEDIUM
+                        no days off                        
+
+  banned_diet_culture   cheat meal, guilty pleasure, no    MEDIUM
+                        pain no gain                       
+
+  banned_absolute       always, never, everyone should,    LOW
+                        nobody can                         
+  ------------------------------------------------------------------------------
+
+**7.6 Safe Framing (Use Instead)**
+
+  -----------------------------------------------------------------------
+  **Avoid**          **Use Instead**
+  ------------------ ----------------------------------------------------
+  cure / treat /     may support, could help, designed to complement
+  heal               
+
+  guaranteed results track your progress, build consistency, support your
+                     goals
+
+  burn fat / shred   move more, build endurance, increase activity
+
+  you must / no      you could try, one option is, many people find that
+  excuses            
+
+  Medical claims     Not medical advice. Consult a healthcare
+                     professional.
+  -----------------------------------------------------------------------
+
+**8. QDRANT VECTOR KNOWLEDGE BASE**
+
+**8.1 Connection**
+
+  -----------------------------------------------------------------------
+  **Property**     **Value**
+  ---------------- ------------------------------------------------------
+  URL              http://localhost:6333
+
+  Dashboard        http://localhost:6333/dashboard
+
+  Embedding Model  nomic-embed-text (via Ollama at ollama:11434)
+
+  Vector Size      768 dimensions
+
+  Distance Metric  Cosine similarity
+  -----------------------------------------------------------------------
+
+**8.2 Collections**
+
+  --------------------------------------------------------------------------------------
+  **Collection**          **Entries**   **Used    **Description**
+                                        In**      
+  ----------------------- ------------- --------- --------------------------------------
+  funfit_brand_rules      44            E2 Node 3 Semantic search --- 15 most relevant
+                                                  returned per query
+
+  funfit_banned_phrases   71            E2 Node 4 Full load every time --- complete
+                                                  safety net
+  --------------------------------------------------------------------------------------
+
+**8.3 Brand Rules Categories**
+
+  --------------------------------------------------------------------------------
+  **Category**       **Count**   **Content**
+  ------------------ ----------- -------------------------------------------------
+  brand_identity     \~5         Company overview, personality, mission, Circle of
+                                 Resilient People
+
+  colors             \~8         Primary, background, status, workout color
+                                 definitions
+
+  voice_tone         \~6         Platform tones, audience tones, language rules
+
+  modules            \~5         Steps, Workouts, Meals, Check-in, Events
+                                 definitions
+
+  health_safety      \~6         Safety rules, safe framing language, disclaimer
+                                 templates
+
+  video_production   \~6         Platform specs, quality requirements, aspect
+                                 ratios
+
+  script_template    \~4         Hook/Value/Steps/CTA structure
+
+  language           \~4         English primary, Arabic secondary, RTL
+                                 considerations
+  --------------------------------------------------------------------------------
+
+**8.4 How to Update the Knowledge Base**
+
+-   Edit the setup script: C:\\FunFit\\funfit_qdrant_setup.py
+
+-   Add/modify entries in BRAND_RULES or BANNED_PHRASES lists
+
+-   Run: python C:\\FunFit\\funfit_qdrant_setup.py
+
+-   Script deletes old collections and recreates them from scratch
+
+-   Changes take effect immediately --- next E2 run uses updated rules
+
+**WARNING:** Running the setup script deletes and recreates both
+collections. Always back up the script before making changes.
+
+**8.5 Adding a Brand Rule**
+
+{ \"id\": 80, \"category\": \"modules\", \"title\": \"Sleep Module\",
+
+\"content\": \"The Sleep module covers sleep hygiene, rest
+optimization\...\" }
+
+**8.6 Adding a Banned Phrase**
+
+{ \"id\": 200, \"category\": \"banned_weight\", \"phrase\": \"diet\",
+
+\"reason\": \"Diet culture language --- promotes restriction mentality\"
+}
+
+**9. DASHBOARD (dashboard.corpfit.cloud)**
+
+**9.1 Overview**
+
+  -----------------------------------------------------------------------
+  **Property**     **Value**
+  ---------------- ------------------------------------------------------
+  URL              dashboard.corpfit.cloud
+
+  Login            corpfit / quantum2026
+
+  Technology       Cloudflare Workers (single-file HTML/JS/CSS)
+
+  Version          v6.0 (108.67KB)
+
+  Deployed Via     wrangler CLI (API token: xrAne5nT\...)
+
+  Account ID       2aed032eb4d82bdc73c9a2a5195c9c58
+  -----------------------------------------------------------------------
+
+**9.2 Dashboard Tabs**
+
+  ------------------------------------------------------------------------
+  **Tab**     **Content**                **Actions Available**
+  ----------- -------------------------- ---------------------------------
+  Content     All PENDING briefs         Preview full content, Approve,
+              awaiting approval          Decline
+
+  Videos      All APPROVED briefs with   Watch video, View script,
+              generated content ready    Publish, Kill
+              for publishing             
+
+  Published   All PUBLISHED items ---    View content, Watch video, View
+              the content archive        metrics
+
+  Errors      Active (unresolved)        View details (auto-filter:
+              pipeline errors            resolved=false)
+
+  ORBIT       Schedule queue with 5 stat View status per platform, filter
+              cards + filterable table   by platform/status
+
+  Analytics   Chart.js visualizations    View only --- Production
+              --- production metrics     Timeline, Cost Tracker, By
+                                         Module, By Platform, Compliance
+                                         Trend
+  ------------------------------------------------------------------------
+
+**9.3 Action Buttons (Top Bar)**
+
+  -----------------------------------------------------------------------
+  **Button**    **Action**             **When to Use**
+  ------------- ---------------------- ----------------------------------
+  🔍 Find       Manually triggers E1   Need fresh trends without waiting
+  Trends        Trend Scout            for 9:30 AM
+                immediately            
+
+  🪐 Create     Manually triggers      Want more briefs immediately
+  Briefs        QUANTUM to create new  
+                briefs from existing   
+                trends                 
+
+  🧹 Check      Shows briefs stuck     Weekly cleanup check
+  Stuck         \>24 hours (same as    
+                /stale command)        
+
+  💊 System     Full health check: DB  When something seems off
+  Status        connection, pipeline   
+                stats, errors          
+  -----------------------------------------------------------------------
+
+**9.4 Content Preview Modal (9 Sections)**
+
+Every content row opens a full modal showing all generated content. Each
+section is editable --- click to edit, Save Changes to update DB
+directly.
+
+  -----------------------------------------------------------------------------
+  **Icon**   **Section**   **Description**
+  ---------- ------------- ----------------------------------------------------
+  🎯         Brief Summary Topic, module, platform, funnel, duration
+
+  🎣         Hooks         3 attention-grabbing openers (highlighted coral)
+
+  🎬         Script        Timed script with timestamps \[0-2s\], \[3-7s\],
+                           etc.
+
+  📱         On-Screen     Text overlay for video editor
+             Text          
+
+  🎨         Storyboard    Scene-by-scene visual descriptions
+
+  📝         Caption       Short social media caption
+             (Short)       
+
+  📄         Caption       Longer caption with hashtags
+             (Long)        
+
+  📢         CTA           Call to action (e.g., \'Download CorpFit\')
+
+  ⚠️         Disclaimer    Health/safety disclaimer (if applicable)
+  -----------------------------------------------------------------------------
+
+**9.5 Analytics Page Charts**
+
+  --------------------------------------------------------------------------
+  **Chart**       **Data Shown**               **Chart Type**
+  --------------- ---------------------------- -----------------------------
+  Production      Content pieces generated per Line chart (Chart.js)
+  Timeline        day over last 30 days        
+
+  Compliance      QA pass rate % vs fail rate  Line chart
+  Trend           % over time (dual-axis)      
+
+  Cost Tracker    Daily spend in USD using     Bar chart
+                  real token counts            
+
+  By Module       Content distribution across  Bar chart
+                  5 modules (normalized)       
+
+  By Platform     Content distribution across  Doughnut chart
+                  TikTok/IG/LinkedIn/YouTube   
+
+  Compliance      7 stat cards + CTA Funnel    Mixed
+  Section         chart + QA Checks Breakdown  
+                  chart                        
+  --------------------------------------------------------------------------
+
+**9.6 ORBIT Tab**
+
+Shows real-time scheduling queue with 5 stat cards: Queued, Publishing,
+Published, Failed, Held/Cancelled. Filterable table with platform and
+status dropdowns. Styled with coral-to-pink gradient to distinguish from
+other tabs.
+
+**10. TELEGRAM BOT**
+
+**10.1 Configuration**
+
+  -----------------------------------------------------------------------
+  **Property**     **Value**
+  ---------------- ------------------------------------------------------
+  Bot Token        8503417924:AAFUMvEbisLKjijhFdQjaCMRvoKX77zBrC8
+
+  Chat ID          8484541577
+
+  Approach         Long polling --- getUpdates API (no public URL
+                   required)
+
+  Poll Interval    Every 30 seconds (Brief Approval Handler schedule
+                   trigger)
+
+  Update Types     callback_query + message (both registered in
+                   allowed_updates)
+  -----------------------------------------------------------------------
+
+**10.2 Callback Actions (Button Taps)**
+
+  --------------------------------------------------------------------------------
+  **Action**           **Stage**     **Effect**             **Next Step**
+  -------------------- ------------- ---------------------- ----------------------
+  approve              Stage 1       brief.status →         Wait \~30s for content
+                       (Brief        \'approved\'. E2       preview
+                       review)       triggered via webhook. 
+
+  reject               Stage 1       brief.status →         Done --- brief gone
+                       (Brief        \'rejected\'.          
+                       review)       Archived.              
+
+  publish              Stage 2       brief.status →         Wait 2-5 min for video
+                       (Content      \'published\'. E3      preview
+                       review)       triggered via webhook. 
+
+  kill                 Stage 2       brief.status →         Done --- content
+                       (Content      \'killed\'. No video   archived
+                       review)       produced.              
+
+  platform_tiktok      Stage 3       schedule_logs row      ORBIT Publisher picks
+                       (ORBIT        created for TikTok     up within 5 min
+                       scheduling)   (status: queued)       
+
+  platform_instagram   Stage 3       schedule_logs row      ORBIT Publisher picks
+                       (ORBIT        created for Instagram  up within 5 min
+                       scheduling)   (status: queued)       
+
+  platform_linkedin    Stage 3       schedule_logs row      ORBIT Publisher picks
+                       (ORBIT        created for LinkedIn   up within 5 min
+                       scheduling)   (status: queued)       
+
+  platform_all         Stage 3       3 schedule_logs rows   All 3 platforms queued
+                       (ORBIT        created (one per       
+                       scheduling)   platform)              
+
+  platform_hold        Stage 3       No schedule_logs       Manually re-trigger
+                       (ORBIT        created. Video stays   via /orbit later
+                       scheduling)   in publish_logs.       
+  --------------------------------------------------------------------------------
+
+**10.3 Commands**
+
+  ----------------------------------------------------------------------------
+  **Command**          **Handler**        **Response**
+  -------------------- ------------------ ------------------------------------
+  /status              System Health      Complete system health: trends
+                       Check workflow     count, briefs, content, videos,
+                                          errors, last activity per agent
+
+  /stale               Stale Brief Check  List of briefs pending or approved
+                       workflow           \>24h without action
+
+  /backup              Backup Manager     Triggers manual DB snapshot +
+                       workflow           service health report
+
+  /help                Approval Handler   Full command list with descriptions
+                       (inline)           
+
+  /orbit_status        Approval Handler   ORBIT queue summary:
+                       (inline)           Queued/Publishing/Published/Failed
+                                          counts per platform
+
+  /orbit_queue         Approval Handler   Detailed list of all active
+                       (inline)           schedule_logs items
+
+  /orbit_mode          Approval Handler   Switches orbit_mode in
+  manual\|semi\|auto   (inline)           system_config. Confirms change via
+                                          Telegram.
+
+  /orbit               Triggers ORBIT     Immediately processes all queued
+                       Publisher webhook  schedule_logs items
+  ----------------------------------------------------------------------------
+
+**11. AI MODELS & COST TRACKING**
+
+**11.1 Model Configuration**
+
+  --------------------------------------------------------------------------------
+  **Model**    **API Identifier**          **Used For**       **Input   **Output
+                                                              Rate**    Rate**
+  ------------ --------------------------- ------------------ --------- ----------
+  Claude       claude-sonnet-4-20250514    E2 content         \$3 /     \$15 /
+  Sonnet 4                                 generation +       MTok      MTok
+                                           QUANTUM brief                
+                                           creation                     
+
+  Claude Haiku claude-haiku-4-5-20251001   QA Gate 1, Gate 2, \$1 /     \$5 / MTok
+  4.5                                      Gate 3 + E1 trend  MTok      
+                                           scoring                      
+  --------------------------------------------------------------------------------
+
+**11.2 Cost Per Content Piece**
+
+  ---------------------------------------------------------------------------
+  **Call**         **Model**   **Approx    **Approx    **Cost**
+                               Tokens In** Tokens      
+                                           Out**       
+  ---------------- ----------- ----------- ----------- ----------------------
+  E2 Content       Sonnet 4    \~2,250     \~2,000     \~\$0.040
+  Generation                                           
+
+  QA Gate 1        Haiku 4.5   \~800       \~200       \~\$0.002
+  (Health)                                             
+
+  QA Gate 2        Haiku 4.5   \~800       \~200       \~\$0.002
+  (Brand)                                              
+
+  QA Gate 3        Haiku 4.5   \~800       \~200       \~\$0.002
+  (Audience)                                           
+
+  TOTAL PER PIECE                                      \~\$0.046--\$0.070
+  ---------------------------------------------------------------------------
+
+**11.3 Cost Tracking Implementation**
+
+Real-time cost tracking was implemented after discovering a \$4.76
+discrepancy between estimated dashboard costs and actual Anthropic
+billing. Every API call now captures exact token counts.
+
+  -------------------------------------------------------------------------
+  **Field**       **Table**      **Description**
+  --------------- -------------- ------------------------------------------
+  input_tokens    content_logs   Actual input tokens from API
+                                 response.usage.input_tokens
+
+  output_tokens   content_logs   Actual output tokens from API
+                                 response.usage.output_tokens
+
+  e2_cost         content_logs   Content generation cost: (input_tokens/1M
+                                 \* 3) + (output_tokens/1M \* 15)
+
+  qa_cost         content_logs   QA gates cost: sum of 3 Haiku calls
+
+  total_cost      content_logs   e2_cost + qa_cost
+
+  api_costs       api_costs      Granular per-call breakdown (call_type,
+                  table          model, tokens, cost)
+  -------------------------------------------------------------------------
+
+**11.4 Production Metrics (as of March 2026)**
+
+  -----------------------------------------------------------------------
+  **Metric**                 **Value**
+  -------------------------- --------------------------------------------
+  Total Trends Discovered    260+
+
+  Total Briefs Created       136+
+
+  Content Pieces Generated   105+
+
+  Videos Produced            9 (simulated --- real tool subscriptions
+                             pending)
+
+  QA Pass Rate (pre-Gate2    67%
+  v2)                        
+
+  CTA Compliance             100%
+  (post-audit)               
+
+  Brand Name Compliance      100%
+
+  Unresolved Errors          0
+
+  Active Workflows           16
+
+  Total API Spend (approx)   \$5.88
+
+  Average Cost Per Piece     \~\$0.063
+  -----------------------------------------------------------------------
+
+**12. DAILY OPERATIONS GUIDE**
+
+**12.1 Daily Timeline**
+
+  ----------------------------------------------------------------------------
+  **Time          **Event**                 **Action Required**
+  (Cairo)**                                 
+  --------------- ------------------------- ----------------------------------
+  9:30 AM         E1 Trend Scout fires      None --- fully automatic
+                  automatically             
+
+  \~9:45 AM       QUANTUM creates 3 briefs  None --- automatic
+                  --- arrive on Telegram    
+
+  \~10:00 AM      Review 3 briefs on        Tap ✅ Approve or ❌ Reject on
+                  Telegram                  each
+
+  \~10:00-10:30   E2 generates content      None --- automatic
+  AM              (\~30 seconds per brief)  
+
+  After content   Content preview appears   Read content, tap ✅ Publish or ❌
+  ready           on Telegram with          Kill
+                  \[Publish\]\[Kill\]       
+
+  After Publish   E3 produces video (\~2-5  Tap platform buttons when ORBIT
+  tap             min), E4 schedules        asks: TikTok/IG/LinkedIn/All/Hold
+
+  Within 5 min    ORBIT Publisher posts to  None --- automatic. Receive
+                  selected platforms        confirmation on Telegram.
+
+  Anytime         Monitor via /status or    Optional --- check health, review
+                  dashboard.corpfit.cloud   analytics
+  ----------------------------------------------------------------------------
+
+**12.2 File Organization**
+
+  -----------------------------------------------------------------------------------
+  **Path**                             **Contents**
+  ------------------------------------ ----------------------------------------------
+  C:\\CorpFit\\                        Root directory
+
+  C:\\CorpFit\\docs\\                  Word documents: completion reports, guides,
+                                       runbooks
+
+  C:\\CorpFit\\prompts\\               System prompts: QUANTUM, E1, QA Gates 1-3,
+                                       Planning Prompts
+
+  C:\\CorpFit\\scripts\\               Python files: Qdrant setup
+                                       (funfit_qdrant_setup.py), utilities
+
+  C:\\CorpFit\\workflows\\             n8n workflow exports (JSON backups)
+
+  C:\\FunFit\\funfit_qdrant_setup.py   Qdrant knowledge base setup script (uses old
+                                       FunFit directory name)
+  -----------------------------------------------------------------------------------
+
+**12.3 Troubleshooting Quick Reference**
+
+  ------------------------------------------------------------------------
+  **Symptom**       **Likely Cause**  **Fix**
+  ----------------- ----------------- ------------------------------------
+  No briefs at 9:30 E1 cron failed or Type /status to check. If E1 failed:
+  AM                Anthropic API     click \'Find Trends\' in dashboard,
+                    timeout           then \'Create Briefs\'.
+
+  Content           E2 API timeout or Check Errors tab on dashboard.
+  generating but no Claude API error  Usually transient --- try approving
+  preview appears                     another brief. System has retry
+                                      logic.
+
+  Dashboard won\'t  Cloudflare tunnel Check Docker is running. Verify
+  load              down or Docker    Windows Task Scheduler \'CorpFit
+                    stopped           Tunnel\' task is active. Restart
+                                      cloudflared if needed.
+
+  Telegram buttons  Webhook URL       Check Brief Approval Handler is
+  not triggering    mismatch or       Active (green) in n8n. Verify
+                    Approval Handler  webhook URL in callback_data
+                    paused            matches.
+
+  E3 never fires    Action string     Handler must accept both \'publish\'
+  after Publish tap mismatch in       AND \'published\' --- check routing
+                    Approval Handler  code.
+
+  Duplicate briefs  Dedup Check       Verify Dedup Check workflow is
+  created           sub-workflow not  Active in n8n.
+                    running           
+
+  Qdrant returns    Collection name   Collections are: funfit_brand_rules
+  nothing           mismatch          and funfit_banned_phrases (note:
+                                      FunFit naming in Qdrant).
+
+  Double            SQL escaping      Use separate raw\_ (display) and
+  apostrophes in    applied to        sql\_ (INSERT) field prefixes in
+  Telegram messages display strings   Code nodes.
+
+  QA Gate 2 failing Gate too strict   Gate 2 v2 has DO NOT FAIL safe list.
+  everything        --- Fun Test too  Check if content is on the safe list
+                    aggressive        before tuning.
+
+  Analytics shows   content_logs rows Historical rows predate cost
+  \$0 cost          have NULL cost    tracking. Only new rows (post
+                    columns           cost-tracking update) have real
+                                      values.
+
+  ORBIT Publisher   Platform API      Register developer apps on
+  shows             credentials not   TikTok/Meta/LinkedIn. Add access
+  PENDING_SETUP     yet configured    tokens to system_config table.
+  ------------------------------------------------------------------------
+
+**13. n8n TECHNICAL PATTERNS**
+
+**13.1 Critical Rules**
+
+  ------------------------------------------------------------------------------------------
+  **Pattern**      **✅ Correct Way**                        **❌ Wrong Way**
+  ---------------- ----------------------------------------- -------------------------------
+  HTTP requests in this.helpers.httpRequest()                fetch() or axios --- not
+  Code nodes                                                 available in n8n sandbox
+
+  Cross-node data  \$(\'NodeName\').first().json.fieldName   Direct variable access or
+  references                                                 \$json after RETURNING \*
+
+  Webhook +        Set trigger to \'Using Respond to Webhook Default setting (causes timeout
+  Response nodes   Node\'                                    on webhook calls)
+
+  Workflow         Linear chain (A→B→C→D)                    Split connections from single
+  sequences                                                  node (causes data passthrough
+                                                             issues)
+
+  SQL string       Separate raw\_ fields (display) + sql\_   Same escaped value for both
+  escaping         fields (INSERT)                           display and INSERT
+
+  Action string    Accept BOTH \'publish\' AND \'published\' Exact match only --- misses
+  matching                                                   some callback variations
+
+  QA gates         Inline Code nodes inside E2 workflow      Sub-workflows --- data
+                                                             passthrough bugs caused
+                                                             failures
+
+  Telegram polling getUpdates with offset tracking           Webhook (requires public URL,
+                                                             breaks in dev)
+  ------------------------------------------------------------------------------------------
+
+**13.2 Common Gotchas**
+
+-   Webhook POST data: always wrapped in body object --- check
+    items\[0\].json.body
+
+-   PostgreSQL RETURNING \*: replaces \$json in downstream nodes ---
+    must use \$(\'NodeName\').first().json
+
+-   Telegram callback vs command: need allowed_updates:
+    \[\'callback_query\', \'message\'\] for both
+
+-   Field name mismatches: always verify names between connected nodes
+    (e.g., primary_tool vs video_tool)
+
+-   Content deduplication: inject existing topics into LLM prompt, NOT
+    database matching
+
+-   n8n credentials: \'Postgres account\' credential ID =
+    q7zxG97pdUIHmNnO (separate from \'Read Top Trends\' credential)
+
+**13.3 Error Handling Pattern**
+
+Try-catch around all API calls
+
+→ On error: POST to Error Logger webhook (/webhook/error-logger)
+
+→ Error Logger: INSERT to error_logs table
+
+→ Telegram notification with error type + message
+
+→ Retry with exponential backoff (2s, 4s, 6s for critical nodes)
+
+**13.4 Workflow Update Process (via API)**
+
+-   1\. GET workflow: POST to n8n.corpfit.cloud/rest/workflows/{id} ---
+    capture versionId
+
+-   2\. Deactivate: POST /rest/workflows/{id}/deactivate with current
+    versionId
+
+-   3\. Update: PATCH /rest/workflows/{id} with new definition
+
+-   4\. Reactivate: POST /rest/workflows/{id}/activate with updated
+    versionId
+
+**Login payload:** Uses \'emailOrLdapLoginId\' field (not \'email\') for
+authentication.
+
+**14. PENDING ITEMS & NEXT STEPS**
+
+**14.1 Platform API Credentials (BLOCKING --- Real Publishing)**
+
+  -----------------------------------------------------------------------------
+  **Platform**   **Action Required**                **Where to Configure**
+  -------------- ---------------------------------- ---------------------------
+  TikTok         Register developer app at          system_config:
+                 developers.tiktok.com. Get         tiktok_access_token
+                 access_token with video.publish +  
+                 video.upload scopes. Verify        
+                 corpfit.cloud domain.              
+
+  Instagram /    Create Meta app at                 system_config:
+  Meta           developers.facebook.com. Link to   instagram_access_token +
+                 Instagram Business account. Get    instagram_user_id
+                 long-lived page token.             
+
+  LinkedIn       Register app at                    system_config:
+                 linkedin.com/developers. Request   linkedin_access_token +
+                 w_organization_social scope. Get   linkedin_org_id
+                 organization access token.         
+  -----------------------------------------------------------------------------
+
+**14.2 Video Production (PENDING SUBSCRIPTIONS)**
+
+  -------------------------------------------------------------------------------
+  **Tool**     **Plan**      **Monthly   **Limit**    **Status**
+                             Cost**                   
+  ------------ ------------- ----------- ------------ ---------------------------
+  Kling 2.6    Pay-per-use   \~\$37 est. \~60 videos  fal.ai key active ---
+  (via fal.ai)                                        subscribe to Kling
+
+  HeyGen       Basic         \$29/mo     \~12 B2B     Not yet subscribed
+                                         videos       
+
+  Veo 3.1      Google API    TBD         B2C Workouts API access pending
+
+  Synthesia    Starter       \$22/mo     \~10         Not yet subscribed
+                                         enterprise   
+                                         videos       
+
+  Pika 2.2     Basic         \$8/mo      TikTok       Not yet subscribed
+                                         social clips 
+  -------------------------------------------------------------------------------
+
+**14.3 Production Readiness Checklist**
+
+  -----------------------------------------------------------------------------
+  **Item**                       **Priority**   **Status**
+  ------------------------------ -------------- -------------------------------
+  Subscribe to Kling via fal.ai  HIGH           PENDING
+
+  Subscribe to HeyGen            HIGH           PENDING
+
+  Register TikTok developer      HIGH           PENDING
+  account + get access token                    
+
+  Register Meta developer        HIGH           PENDING
+  account + Instagram token                     
+
+  Register LinkedIn developer    HIGH           PENDING
+  account + org token                           
+
+  Wire real Kling API call into  HIGH           PENDING (fal.ai key ready)
+  E3 workflow                                   
+
+  Wire real HeyGen API into E3   HIGH           PENDING
+  workflow                                      
+
+  Implement OAuth token refresh  MEDIUM         PENDING
+  (Instagram 60-day, LinkedIn                   
+  60-day)                                       
+
+  First real end-to-end test:    HIGH           PENDING
+  Brief → Content → Real Video →                
+  Telegram → Publish                            
+
+  Analytics integration: pull    LOW            FUTURE
+  engagement metrics from                       
+  platform APIs into trend                      
+  discovery                                     
+
+  FFmpeg sidecar usage:          MEDIUM         PENDING (FFmpeg installed)
+  watermarks + subtitles on                     
+  videos                                        
+
+  Test Gate 2 v2 pass rate       MEDIUM         PENDING
+  (compare to pre-audit 67%)                    
+  -----------------------------------------------------------------------------
+
+**15. ANTI-PATTERNS & NON-NEGOTIABLES**
+
+**15.1 Technical Anti-Patterns**
+
+  -----------------------------------------------------------------------
+  **❌ Never**                   **✅ Instead**
+  ------------------------------ ----------------------------------------
+  fetch() in n8n Code nodes      this.helpers.httpRequest()
+
+  Direct variable refs across    \$(\'NodeName\').first().json.field
+  nodes                          
+
+  Same escaped string for SQL +  Separate raw\_ (display) and sql\_
+  display                        (INSERT) fields
+
+  Exact action string match only Accept both tenses (publish / published)
+
+  Complex DB matching for dedup  Inject existing topics into LLM prompt
+
+  Sub-workflows for QA gates     Inline QA gates in E2 workflow
+
+  Default webhook trigger        \'Using Respond to Webhook Node\' when
+  setting                        Response node exists
+
+  Split connections from one     Linear sequential chains
+  node                           
+
+  Local AI models for complex    Claude API --- llama3.2/3.1 failed on
+  prompts                        3,300-word prompts
+  -----------------------------------------------------------------------
+
+**15.2 Content Non-Negotiables**
+
+  -----------------------------------------------------------------------
+  **Rule**              **Detail**
+  --------------------- -------------------------------------------------
+  NO medical advice     No diagnose, prescribe, treat, cure, or
+                        guaranteed health outcomes
+
+  NO \'free\' in CTAs   Hard-coded Gate 3 check --- will always FAIL
+
+  NO \'FunFit\'         Old brand name --- must be CorpFit in all content
+  anywhere              and UI
+
+  NO B2B CTAs on B2C    \'Book a demo\' must never appear in B2C
+  content               (TikTok/Instagram) content
+
+  NO publishing without All 3 gates must pass or content is blocked
+  QA pass               
+
+  NO engagement-only    \'Save this\' alone is not enough --- must pair
+  CTA for B2C           with \'Download CorpFit\'
+
+  \'CorpFit\' MUST      Gate 3 hard-coded check for each location
+  appear in CTA, short  
+  caption, and long     
+  caption               
+  -----------------------------------------------------------------------
+
+**15.3 Dashboard / Code Rules**
+
+  -----------------------------------------------------------------------
+  **Rule**              **Detail**
+  --------------------- -------------------------------------------------
+  Never say \'free\' in B2C: \'Download CorpFit\' \| B2B: \'Book a demo\'
+  CTAs                  
+
+  Always use DXA for    WidthType.PERCENTAGE breaks in Google Docs
+  table widths          
+
+  Use ShadingType.CLEAR ShadingType.SOLID causes black backgrounds
+  for table cells       
+
+  Cloudflare Worker     wrangler deploy --- never edit production JS
+  deploy                directly
+
+  n8n workflow backup   Export JSON before any modification --- QUANTUM
+                        Backup Manager runs daily
+  -----------------------------------------------------------------------

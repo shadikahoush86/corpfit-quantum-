@@ -1,0 +1,403 @@
+**CORPFIT**
+
+*Circle of Resilient People*
+
+**QUANTUM Content Factory**
+
+Daily Operations Guide
+
+*How the system works, what you do, and where to find everything*
+
+February 2026
+
+**1. How the System Works**
+
+The QUANTUM Content Factory is a fully automated system that discovers
+trending wellness topics, creates video content scripts, and produces
+videos. It runs every morning at 9:00 AM Cairo time. Your only job is to
+review and approve content from your phone.
+
+**1.1 The Daily Pipeline (What Happens Automatically)**
+
++----+-----------------------------------------------------------------+
+| *  | **E1 Trend Scout discovers fresh trends** *9:00 AM*             |
+| *1 |                                                                 |
+| ** | At 9:00 AM Cairo, E1 automatically scans wellness trend sources |
+|    | (Google Trends, TikTok trending, fitness blogs) and finds 7-15  |
+|    | fresh topics. It scores each trend by relevance and maps them   |
+|    | to CorpFit modules (Steps, Workouts, Meals, Check-in, Events).  |
++----+-----------------------------------------------------------------+
+
++----+-----------------------------------------------------------------+
+| *  | **QUANTUM creates 3 content briefs** *\~9:02 AM*                |
+| *2 |                                                                 |
+| ** | Immediately after E1 finishes, QUANTUM reads the trend board,   |
+|    | checks what content already exists (no duplicates), and creates |
+|    | 3 unique briefs. Each brief has a topic, module, platform       |
+|    | (TikTok/Instagram/LinkedIn), funnel (B2C/B2B), and duration.    |
++----+-----------------------------------------------------------------+
+
++----+-----------------------------------------------------------------+
+| *  | **Briefs arrive on Telegram** *\~9:04 AM*                       |
+| *3 |                                                                 |
+| ** | You receive 3 briefs on Telegram with full details: topic,      |
+|    | module, platform, funnel, duration, trend score, and suggested  |
+|    | angle. Each brief has Approve and Reject buttons.               |
++----+-----------------------------------------------------------------+
+
+**Everything above happens without you doing anything. Now it\'s your
+turn:**
+
++----+-----------------------------------------------------------------+
+| *  | **You tap Approve on Telegram** *You decide*                    |
+| *4 |                                                                 |
+| ** | Review the brief on your phone. If the topic looks good, tap    |
+|    | Approve. If not, tap Reject and it\'s archived. You can approve |
+|    | all 3, just 1, or none.                                         |
++----+-----------------------------------------------------------------+
+
++----+-----------------------------------------------------------------+
+| *  | **E2 generates full content (automatic)** *\~30 seconds*        |
+| *5 |                                                                 |
+| ** | Within 30 seconds of your Approve tap, ELECTRON-2 generates the |
+|    | complete content package: 3 hooks, a timed script, on-screen    |
+|    | text, storyboard, short caption, long caption, CTA, and         |
+|    | disclaimer. It runs through 3 AI quality gates checking for     |
+|    | health claims, brand tone, and audience fit.                    |
++----+-----------------------------------------------------------------+
+
++----+-----------------------------------------------------------------+
+| *  | **Content preview appears on Telegram** *Automatic*             |
+| *6 |                                                                 |
+| ** | The FULL generated content appears on Telegram so you can read  |
+|    | every word the audience will see. At the bottom: Publish and    |
+|    | Kill buttons. This is your quality check.                       |
++----+-----------------------------------------------------------------+
+
++----+-----------------------------------------------------------------+
+| *  | **You tap Publish or Kill** *You decide*                        |
+| *7 |                                                                 |
+| ** | Read the content. If it\'s good, tap Publish. If something\'s   |
+|    | off, tap Kill and it\'s archived. You\'re the final quality     |
+|    | gate.                                                           |
++----+-----------------------------------------------------------------+
+
++----+-----------------------------------------------------------------+
+| *  | **E3 produces the video (automatic)** *\~2-5 minutes*           |
+| *8 |                                                                 |
+| ** | After you tap Publish, ELECTRON-3 automatically selects the     |
+|    | right video tool (Veo for cinematic, Kling for fast clips,      |
+|    | HeyGen for B2B avatars) and produces the video. A preview       |
+|    | appears on Telegram.                                            |
++----+-----------------------------------------------------------------+
+
+**2. Your Daily Routine**
+
+This is what your typical day looks like as the content operator:
+
+**2.1 Morning (9:00-9:15 AM Cairo)**
+
+📱 Check Telegram around 9:05 AM --- 3 new briefs should be waiting
+
+👀 Review each brief\'s topic, module, and platform
+
+✅ Tap Approve on the ones you like
+
+❌ Tap Reject on any you don\'t want
+
+⏳ Wait \~30 seconds for content to generate
+
+📋 Read the full content preview that appears
+
+🚀 Tap Publish if content looks good
+
+💀 Tap Kill if something\'s wrong
+
+**2.2 Anytime (Monitoring)**
+
+📊 Type /status in Telegram --- get system health dashboard
+
+⏰ Type /stale in Telegram --- see briefs waiting too long
+
+🌐 Open dashboard.corpfit.cloud --- full mission control
+
+**2.3 That\'s It**
+
+**The entire system runs itself. You only need 10-15 minutes per day to
+review and approve content. Everything else is automated.**
+
+**3. Telegram Actions Reference**
+
+Every action happens through Telegram buttons or commands. Here\'s the
+complete list:
+
+**3.1 Button Actions**
+
+  ------------ ---------- ------------------------ -------------------------
+  **Button**   **When**   **What Happens**         **Next Step**
+
+  **✅         Stage 1    Brief status changes to  Wait 30s for content
+  Approve**               \'approved\'. E2 starts  preview to appear
+                          generating content       
+                          automatically.           
+
+  **❌         Stage 1    Brief is archived.       Done --- brief is gone
+  Reject**                Nothing is generated.    
+
+  **✅         Stage 2    Content is marked        Wait 2-5 min for video
+  Publish**               \'published\'. E3 starts preview
+                          video production         
+                          automatically.           
+
+  **❌ Kill**  Stage 2    Content is archived. No  Done --- content is gone
+                          video is produced.       
+  ------------ ---------- ------------------------ -------------------------
+
+**3.2 Telegram Commands**
+
+  ------------- ------------------------------- ---------------------------
+  **Command**   **What It Does**                **When to Use**
+
+  **/status**   Shows complete system health:   Anytime you want to check
+                how many trends, briefs,        if the system is running
+                content pieces, videos, errors, 
+                and when each part last ran.    
+
+  **/stale**    Lists any briefs that have been When you want to clean up
+                pending or approved for more    old briefs
+                than 24 hours without action.   
+  ------------- ------------------------------- ---------------------------
+
+**4. Dashboard (Mission Control)**
+
+The web dashboard gives you full visibility into the entire content
+factory. Access it from any browser:
+
+**URL: dashboard.corpfit.cloud**
+
+Login: corpfit / quantum2026
+
+**4.1 Dashboard Tabs**
+
+  --------------- --------------------------------- -----------------------
+  **Tab**         **What\'s Inside**                **Actions Available**
+
+  **Content**     All PENDING briefs waiting for    Preview content,
+                  your review. Shows topic, module, Approve, Decline
+                  platform, funnel, QA status, and  
+                  trend score.                      
+
+  **Videos**      All APPROVED briefs ready for     Watch video, View
+                  publishing. Content has been      script, Publish, Kill
+                  generated and is waiting for your 
+                  go-ahead.                         
+
+  **Published**   All PUBLISHED items. Your content View content, Watch
+                  archive --- see what was          video
+                  produced, which video tool was    
+                  used, and review the content.     
+
+  **Errors**      Any pipeline errors. Shows which  View only (errors
+                  workflow failed, what went wrong, auto-resolve or need
+                  how many retries, and whether     developer)
+                  it\'s resolved.                   
+  --------------- --------------------------------- -----------------------
+
+**4.2 Action Buttons (Top Bar)**
+
+  ---------------- --------------------------------- --------------------
+  **Button**       **What It Does**                  **When to Use**
+
+  **🔍 Find        Manually triggers E1 Trend Scout  You want fresh
+  Trends**         to discover new trends right now  trends immediately
+                   (doesn\'t wait for 9 AM).         
+
+  **🪐 Create      Manually triggers QUANTUM to      You want more briefs
+  Briefs**         create new briefs from existing   without waiting
+                   trends.                           
+
+  **🧹 Check       Shows any briefs that are stuck   Weekly cleanup check
+  Stuck**          (pending/approved for more than   
+                   24 hours).                        
+
+  **💊 System      Full health check: database       When something seems
+  Status**         connection, pipeline stats, last  off
+                   activity, error count.            
+  ---------------- --------------------------------- --------------------
+
+**4.3 Content Preview Modal**
+
+When you click \'Preview\' or \'Content\' on any row, a full content
+modal opens showing all 9 sections:
+
+🎯 Brief Summary --- what the content is about
+
+🎣 Hooks --- 3 attention-grabbing openers (highlighted in orange)
+
+🎬 Script --- timed script with timestamps \[0-2s\], \[3-7s\], etc.
+(highlighted in orange)
+
+📱 On-Screen Text --- text that appears on screen during the video
+
+🎨 Storyboard --- visual scene descriptions
+
+📝 Caption (Short) --- short social media caption
+
+📄 Caption (Long) --- longer caption with hashtags
+
+📢 CTA --- call to action (e.g., \'Download CorpFit\')
+
+⚠️ Disclaimer --- health/safety disclaimer if needed
+
+*Every section is editable --- click to edit, then Save Changes to
+update the database directly.*
+
+**5. Video Tool Routing (Automatic)**
+
+E3 automatically selects the right video tool based on module, platform,
+and funnel. You don\'t need to do anything --- this is for your
+reference:
+
+  -------------- -------------- ------------ ------------------ -------------------
+  **Module**     **Platform**   **Funnel**   **Tool Selected**  **Why**
+
+  **Steps /      Any            B2C          **Kling 2.6**      Fast generation,
+  Meals**                                                       great for daily
+                                                                content
+
+  **Workouts**   Any            B2C          **Veo 3.1**        Highest cinematic
+                                                                quality
+
+  **Events**     TikTok         B2C          **Pika 2.2**       Fast social clips
+
+  **Events /     LinkedIn       B2B          **Synthesia**      Enterprise avatar,
+  Check-in**                                                    professional
+
+  **Any other**  Any            B2B          **HeyGen**         Primary B2B avatar
+                                                                tool
+  -------------- -------------- ------------ ------------------ -------------------
+
+**6. What Can Go Wrong (and What to Do)**
+
+  ------------------- ------------------------- -------------------------------
+  **Problem**         **Symptom**               **What to Do**
+
+  **No briefs at 9    Telegram is silent after  Type /status to check. If E1
+  AM**                9:05 AM                   failed, click \'Find Trends\'
+                                                on dashboard, then \'Create
+                                                Briefs\'.
+
+  **Content says      You tapped Approve but no Check Errors tab on dashboard.
+  \'generating\' but  preview appears after 2   Usually an API timeout --- try
+  nothing comes**     minutes                   approving another brief. The
+                                                system has retry logic.
+
+  **Dashboard won\'t  dashboard.corpfit.cloud   Make sure your laptop is on and
+  load**              shows error               Docker is running. The tunnel
+                                                needs to be active. Check
+                                                Windows Task Scheduler for
+                                                \'CorpFit Tunnel\'.
+
+  **QA FAIL on        Content preview shows QA: Read the content --- if it
+  content**           FAIL                      looks fine to you, you can
+                                                still Publish (you\'re the
+                                                final authority). QA is
+                                                advisory.
+
+  **Laptop            Everything stopped        Just wait 2 minutes. Docker
+  restarted**         working                   auto-starts, tunnel
+                                                auto-starts. Everything
+                                                recovers on its own.
+
+  **Telegram buttons  Tapping Approve/Publish   The button timed out. Use the
+  expired**           does nothing              dashboard instead --- same
+                                                actions are available there.
+  ------------------- ------------------------- -------------------------------
+
+**7. System Map**
+
+Where everything lives:
+
+**7.1 URLs**
+
+  ---------------------- ------------------------------------------------
+  **What**               **URL**
+
+  **Dashboard**          https://dashboard.corpfit.cloud
+
+  **n8n Admin**          https://n8n.corpfit.cloud
+
+  **Telegram Bot**       Corp.group in Telegram app
+  ---------------------- ------------------------------------------------
+
+**7.2 Logins**
+
+  ---------------------- ----------------------- -------------------------
+  **System**             **Username**            **Password**
+
+  **Dashboard**          corpfit                 quantum2026
+
+  **n8n**                skahoush2@outlook.com   Kahoushshadi1986
+  ---------------------- ----------------------- -------------------------
+
+**7.3 The 11 Workflows**
+
+  ------------------------ ----------------------------------------------
+  **Workflow**             **Purpose**
+
+  **E1 Trend Scout v4**    Discovers 7-15 wellness trends daily at 9 AM
+                           Cairo
+
+  **QUANTUM Planner v4**   Creates 3 unique briefs from trends, sends to
+                           Telegram
+
+  **Approval Handler v11** Listens for Telegram button taps, routes
+                           approve/publish/reject/kill
+
+  **E2 Content Gen v7.3**  Generates hooks, scripts, captions with 3 QA
+                           gates
+
+  **E3 Video Producer v3** Routes to video tool, produces video, stores
+                           result
+
+  **Dashboard API v1**     Feeds data to the web dashboard
+
+  **Dashboard Actions v2** Handles button clicks from the dashboard
+
+  **Error Logger v1**      Records all errors to database
+
+  **Health Check v1**      Runs system health report (/status command)
+
+  **Stale Brief Check v1** Finds briefs stuck too long (/stale command)
+
+  **Dedup Check v1**       Prevents duplicate content topics
+  ------------------------ ----------------------------------------------
+
+**8. Monthly Costs**
+
+The AI content factory runs at extremely low cost:
+
+  ---------------------- ---------------- --------------- -----------------
+  **Component**          **Cost/Piece**   **Monthly (72   **Notes**
+                                          pieces)**       
+
+  **E2 Content           \$0.008          \$0.576         Claude Sonnet 4
+  Generation**                                            
+
+  **QA Gates (3 per      included         included        Claude Haiku
+  piece)**                                                
+
+  **E1 Trend Discovery** \$0.004/run      \$0.12          Daily runs
+
+  **Telegram Bot**       Free             Free            Telegram Bot API
+
+  **Dashboard Hosting**  Free             Free            Cloudflare
+                                                          Workers
+  ---------------------- ---------------- --------------- -----------------
+
+**TOTAL: approximately \$0.66 per month for the entire AI pipeline.**
+
+Video production tools (Veo, Kling, HeyGen, etc.) are separate
+subscriptions estimated at \$75-95/month combined.
+
+CorpFit QUANTUM Content Factory --- Built by S-H-K Software Solutions

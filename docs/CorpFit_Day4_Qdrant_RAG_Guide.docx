@@ -1,0 +1,744 @@
+**CORPFIT**
+
+*Circle of Resilient People*
+
+**QUANTUM AI Content Factory**
+
+**DAY 4 IMPLEMENTATION GUIDE**
+
+Qdrant RAG Integration for n8n
+
+Hybrid Approach: Static Core + Dynamic Knowledge Base
+
+  ------------------------------- ---------------------------------------
+  **Date:**                       February 2026
+
+  **Plan Day:**                   Day 4 of 21
+
+  **Classification:**             Internal Operations
+  ------------------------------- ---------------------------------------
+
+**What You\'ll Build Today**
+
+Today you\'re upgrading your ELECTRON-2 workflow from a single giant
+system prompt to a smart, modular system that pulls knowledge from your
+Qdrant database automatically.
+
++-----------------------------------------------------------------------+
+| **WHY THIS MATTERS**                                                  |
+|                                                                       |
+| Right now, if you want to ban a new phrase or change a brand color,   |
+| you have to edit the entire 3,300-word system prompt. After today,    |
+| you\'ll just add a new entry in Qdrant and the system picks it up     |
+| automatically. Zero prompt editing needed.                            |
++-----------------------------------------------------------------------+
+
+**Before vs After**
+
+  ----------------------------------- -----------------------------------
+  **BEFORE (Day 3)**                  **AFTER (Day 4)**
+
+  Everything hardcoded in one massive Split into static core (1,200
+  system prompt (3,300 words)         words) + dynamic Qdrant knowledge
+
+  Change a banned phrase = edit       Change a banned phrase = add entry
+  system prompt manually              to Qdrant (auto-detected)
+
+  \~1,800 input tokens every time     \~1,000-1,400 input tokens
+  (expensive)                         (cheaper, pulls only what\'s
+                                      needed)
+
+  Same rules for every content type   Smart retrieval: Meals content gets
+                                      Meals rules, TikTok gets TikTok
+                                      tone
+  ----------------------------------- -----------------------------------
+
+**The Hybrid Approach Explained**
+
+Think of ELECTRON-2 as having two parts of its brain:
+
+**Part 1: Static Core (hardcoded in n8n)**
+
+This never changes. It tells ELECTRON-2 WHO it is and HOW to work:
+
+-   Agent identity (\"You are ELECTRON-2, the Content Architect for
+    CorpFit\")
+
+-   Output format (emoji headers, sections, self-check report)
+
+-   Workflow steps (Parse \> Plan \> Create \> Check \> Output)
+
+-   Safe framing rules (\"may support\" instead of \"cures\")
+
+**Part 2: Dynamic Knowledge (pulled from Qdrant)**
+
+This changes and grows over time. It tells ELECTRON-2 WHAT to follow:
+
+-   Brand colors, fonts, visual guidelines
+
+-   Platform-specific tone (TikTok casual, LinkedIn professional)
+
+-   Module definitions (Steps, Workouts, Meals, Check-in, Events)
+
+-   Banned phrases (the 55 words/phrases AI must never use)
+
+-   Health safety rules and disclaimer templates
+
++-----------------------------------------------------------------------+
+| **ANALOGY**                                                           |
+|                                                                       |
+| The static core is like a chef\'s training and cooking technique      |
+| (doesn\'t change). The dynamic knowledge is like today\'s menu and    |
+| ingredient restrictions (changes regularly). You don\'t retrain the   |
+| chef every time you add a new dish --- you just update the menu.      |
++-----------------------------------------------------------------------+
+
+**Your Updated n8n Workflow**
+
+Here\'s the complete workflow you\'ll build today, node by node:
+
++-----------------------------------------------------------------------+
+| WORKFLOW: ELECTRON-2 Content Generator v2 (RAG-Enhanced)              |
+|                                                                       |
+| \[Manual Trigger\]                                                    |
+|                                                                       |
+| \|                                                                    |
+|                                                                       |
+| v                                                                     |
+|                                                                       |
+| \[Set Node: Parse Brief\] \<\-- Extracts module, platform, funnel     |
+| from your input                                                       |
+|                                                                       |
+| \|                                                                    |
+|                                                                       |
+| v                                                                     |
+|                                                                       |
+| \[Qdrant: Brand Rules\] \<\-- Searches Qdrant for relevant brand      |
+| rules                                                                 |
+|                                                                       |
+| \|                                                                    |
+|                                                                       |
+| v                                                                     |
+|                                                                       |
+| \[Qdrant: Banned Phrases\] \<\-- Pulls banned phrases list from       |
+| Qdrant                                                                |
+|                                                                       |
+| \|                                                                    |
+|                                                                       |
+| v                                                                     |
+|                                                                       |
+| \[Code Node: Assemble\] \<\-- Combines static prompt + Qdrant results |
+|                                                                       |
+| \|                                                                    |
+|                                                                       |
+| v                                                                     |
+|                                                                       |
+| \[HTTP Request: Claude\] \<\-- Sends assembled prompt to Claude API   |
+|                                                                       |
+| \|                                                                    |
+|                                                                       |
+| v                                                                     |
+|                                                                       |
+| \[Code Node: Parse Output\] \<\-- Extracts structured content from    |
+| response                                                              |
+|                                                                       |
+| \|                                                                    |
+|                                                                       |
+| v                                                                     |
+|                                                                       |
+| \[Set Node: Store Result\] \<\-- Saves to PostgreSQL (future step)    |
++-----------------------------------------------------------------------+
+
+Total nodes: 7 (up from 2 in your Day 3 workflow). Each node does one
+clear job.
+
+**Step-by-Step Implementation**
+
+Follow these steps in order. Each step tells you exactly what to click
+and type in n8n.
+
++-----------------------------------------------------------------------+
+| **BEFORE YOU START**                                                  |
+|                                                                       |
+| Make sure all your Docker services are running. Open Portainer at     |
+| localhost:9000 and verify n8n, Qdrant, Ollama, and PostgreSQL         |
+| containers are all green/running. Then open n8n at localhost:5678.    |
++-----------------------------------------------------------------------+
+
+**STEP 1: Open Your Existing Workflow**
+
+In n8n, find and open the \"ELECTRON-2 Content Generator\" workflow you
+built on Day 3. We\'ll modify this workflow rather than starting from
+scratch.
+
+1.  Go to localhost:5678
+
+2.  Click on \"ELECTRON-2 Content Generator\" in your workflow list
+
+3.  You should see: Manual Trigger \> HTTP Request (Claude API)
+
++-----------------------------------------------------------------------+
+| **TIP**                                                               |
+|                                                                       |
+| Before making changes, click the three dots menu in the top-right and |
+| select \"Duplicate\" to make a backup copy. Name it \"ELECTRON-2      |
+| Content Generator v1 (backup)\". This way you can always go back if   |
+| something breaks.                                                     |
++-----------------------------------------------------------------------+
+
+**STEP 2: Add the Set Node (Parse Brief)**
+
+This node takes your production brief and extracts the key fields that
+Qdrant will use to search for relevant rules.
+
+**What to do:**
+
+4.  Click the + button between Manual Trigger and HTTP Request
+
+5.  Search for \"Set\" and add a Set node
+
+6.  Rename it to \"Parse Brief\" (double-click the name)
+
+7.  Click \"Add Value\" and add these fields:
+
+  ----------------- ----------------- -----------------------------------
+  **Field Name**    **Type**          **Value**
+
+  **module**        String            meals (change per test)
+
+  **platform**      String            tiktok (change per test)
+
+  **funnel**        String            b2c (or b2b)
+
+  **topic**         String            Desk stretches for office workers
+                                      (your content topic)
+
+  **duration**      String            30 seconds (target video length)
+  ----------------- ----------------- -----------------------------------
+
+*These values will flow through the rest of the workflow. In production,
+these will come from QUANTUM\'s task tickets automatically.*
+
+**STEP 3: Configure Qdrant Credentials in n8n**
+
+Before adding Qdrant nodes, you need to tell n8n how to connect to your
+Qdrant database.
+
+**What to do:**
+
+8.  In n8n, go to Settings (gear icon) \> Credentials
+
+9.  Click \"Add Credential\"
+
+10. Search for \"Qdrant\" and select it
+
+11. Fill in these fields:
+
+  ----------------------- -----------------------------------------------
+  **Field**               **Value**
+
+  **Qdrant URL**          http://qdrant:6333
+
+  **API Key**             (leave empty --- your local Qdrant has no auth)
+  ----------------------- -----------------------------------------------
+
++-----------------------------------------------------------------------+
+| **IMPORTANT: Use \"qdrant\" not \"localhost\"**                       |
+|                                                                       |
+| Inside Docker, services talk to each other using their container      |
+| names, not localhost. Your Qdrant container is named \"qdrant\", so   |
+| n8n connects to http://qdrant:6333. You use localhost:6333 only when  |
+| accessing Qdrant from your browser.                                   |
++-----------------------------------------------------------------------+
+
+12. Click \"Save\" --- name it \"CorpFit Qdrant\"
+
+13. Click \"Test\" to verify the connection works (should show green
+    checkmark)
+
+**STEP 4: Add Qdrant Node: Brand Rules Search**
+
+This node searches your funfit_brand_rules collection for rules relevant
+to the current brief.
+
+**What to do:**
+
+14. Click the + button after the \"Parse Brief\" node
+
+15. Search for \"Qdrant\" and add a \"Qdrant Vector Store\" node
+
+16. Rename it to \"Get Brand Rules\"
+
+17. Configure it as follows:
+
+  ----------------------- -----------------------------------------------
+  **Setting**             **Value**
+
+  **Operation**           Get Many
+
+  **Credential**          CorpFit Qdrant (from Step 3)
+
+  **Collection**          funfit_brand_rules
+
+  **Prompt**              ={{ \$json.module }} {{ \$json.platform }} {{
+                          \$json.funnel }} brand voice tone guidelines
+
+  **Limit**               15 (returns top 15 most relevant rules)
+  ----------------------- -----------------------------------------------
+
++-----------------------------------------------------------------------+
+| **HOW THE SEARCH WORKS**                                              |
+|                                                                       |
+| The Prompt field is the search query. By including the module (e.g.,  |
+| \"meals\"), platform (e.g., \"tiktok\"), and funnel (e.g., \"b2c\"),  |
+| Qdrant finds the brand rules most relevant to THIS specific content   |
+| piece. The {{ \$json.module }} syntax pulls the value from the        |
+| previous Parse Brief node automatically.                              |
++-----------------------------------------------------------------------+
+
++-----------------------------------------------------------------------+
+| **EMBEDDING MODEL REQUIRED**                                          |
+|                                                                       |
+| Qdrant needs an embedding model to search. In the node settings, look |
+| for \"Embedding Model\" and connect it to an Ollama Embeddings node   |
+| using nomic-embed-text (already running on your Ollama). Add an       |
+| Ollama Embeddings sub-node: Model = nomic-embed-text, Base URL =      |
+| http://ollama:11434.                                                  |
++-----------------------------------------------------------------------+
+
+**STEP 5: Add Qdrant Node: Banned Phrases**
+
+This node pulls the banned phrases list so Claude knows what words to
+avoid.
+
+**What to do:**
+
+18. Click the + button after the \"Get Brand Rules\" node
+
+19. Add another \"Qdrant Vector Store\" node
+
+20. Rename it to \"Get Banned Phrases\"
+
+21. Configure it:
+
+  ----------------------- -----------------------------------------------
+  **Setting**             **Value**
+
+  **Operation**           Get Many
+
+  **Credential**          CorpFit Qdrant
+
+  **Collection**          funfit_banned_phrases
+
+  **Prompt**              banned phrases health claims weight loss
+                          medical guarantees pressure shaming
+
+  **Limit**               55 (pull ALL banned phrases --- this is your
+                          full safety net)
+  ----------------------- -----------------------------------------------
+
++-----------------------------------------------------------------------+
+| **WHY PULL ALL BANNED PHRASES?**                                      |
+|                                                                       |
+| Unlike brand rules (where you only need relevant ones), banned        |
+| phrases are a safety net --- you need ALL of them every time. Missing |
+| even one could let a policy violation through. With only 55 entries,  |
+| the token cost is minimal.                                            |
++-----------------------------------------------------------------------+
+
+**STEP 6: Add Code Node: Assemble Prompt**
+
+This is the brain of the workflow. It takes the static core prompt, adds
+the Qdrant results, and creates the final prompt that gets sent to
+Claude.
+
+**What to do:**
+
+22. Click the + button after \"Get Banned Phrases\"
+
+23. Search for \"Code\" and add a Code node
+
+24. Rename it to \"Assemble Prompt\"
+
+25. Set Language to \"JavaScript\"
+
+26. Paste the code shown on the next page
+
+**Code for the Assemble Prompt Node:**
+
++-----------------------------------------------------------------------+
+| // ============================================                       |
+|                                                                       |
+| // ASSEMBLE PROMPT: Static Core + Qdrant Knowledge                    |
+|                                                                       |
+| // ============================================                       |
+|                                                                       |
+| // 1. Get the brief values from Parse Brief node                      |
+|                                                                       |
+| const brief = \$(\'Parse Brief\').first().json;                       |
+|                                                                       |
+| // 2. Get brand rules from Qdrant (array of results)                  |
+|                                                                       |
+| const brandRules = \$(\'Get Brand Rules\').all();                     |
+|                                                                       |
+| const brandRulesText = brandRules                                     |
+|                                                                       |
+| .map(item =\> {                                                       |
+|                                                                       |
+| const doc = item.json.document \|\| item.json;                        |
+|                                                                       |
+| const meta = doc.metadata \|\| {};                                    |
+|                                                                       |
+| return \`\[\${meta.category \|\| \'general\'}\] \${meta.title \|\|    |
+| \'\'}: \${doc.pageContent \|\| meta.content \|\| \'\'}\`;             |
+|                                                                       |
+| })                                                                    |
+|                                                                       |
+| .join(\'\\n\');                                                       |
+|                                                                       |
+| // 3. Get banned phrases from Qdrant                                  |
+|                                                                       |
+| const bannedPhrases = \$(\'Get Banned Phrases\').all();               |
+|                                                                       |
+| const bannedText = bannedPhrases                                      |
+|                                                                       |
+| .map(item =\> {                                                       |
+|                                                                       |
+| const doc = item.json.document \|\| item.json;                        |
+|                                                                       |
+| const meta = doc.metadata \|\| {};                                    |
+|                                                                       |
+| return \`- \"\${meta.phrase \|\| doc.pageContent \|\| \'\'}\"         |
+| (\${meta.reason \|\| meta.category \|\| \'\'})\`;                     |
+|                                                                       |
+| })                                                                    |
+|                                                                       |
+| .join(\'\\n\');                                                       |
+|                                                                       |
+| // 4. Static core prompt (agent identity + workflow + format)         |
+|                                                                       |
+| const staticCore = \`                                                 |
+|                                                                       |
+| You are ELECTRON-2, the Content Architect for CorpFit.                |
+|                                                                       |
+| CorpFit is a B2B2C corporate wellness platform.                       |
+|                                                                       |
+| \## YOUR WORKFLOW                                                     |
+|                                                                       |
+| 1\. PARSE the production brief                                        |
+|                                                                       |
+| 2\. PLAN content structure based on platform and module               |
+|                                                                       |
+| 3\. CREATE hooks, script, captions, CTA                               |
+|                                                                       |
+| 4\. CHECK against banned phrases and safety rules                     |
+|                                                                       |
+| 5\. OUTPUT in the required format with emoji headers                  |
+|                                                                       |
+| \## OUTPUT FORMAT (MANDATORY)                                         |
+|                                                                       |
+| \-\--START CONTENT PACKAGE\-\--                                       |
+|                                                                       |
+| BRIEF SUMMARY: \[recap the brief in 2 lines\]                         |
+|                                                                       |
+| HOOKS: \[2-3 hook options\]                                           |
+|                                                                       |
+| SCRIPT: \[time-coded script\]                                         |
+|                                                                       |
+| ON-SCREEN TEXT: \[key phrases with timing\]                           |
+|                                                                       |
+| STORYBOARD: \[scene-by-scene description\]                            |
+|                                                                       |
+| CAPTION (SHORT): \[under 150 chars\]                                  |
+|                                                                       |
+| CAPTION (LONG): \[extended with hashtags\]                            |
+|                                                                       |
+| CTA: \[call-to-action\]                                               |
+|                                                                       |
+| DISCLAIMER: \[if needed, or \'none\'\]                                |
+|                                                                       |
+| SELF-CHECK REPORT: \[confirm no banned phrases, brand compliance\]    |
+|                                                                       |
+| \-\--END CONTENT PACKAGE\-\--                                         |
+|                                                                       |
+| \## SAFE FRAMING RULES                                                |
+|                                                                       |
+| \- Use \'may support\' instead of \'cures/treats\'                    |
+|                                                                       |
+| \- Use \'consider trying\' instead of \'you must/should\'             |
+|                                                                       |
+| \- Use \'research suggests\' instead of \'proven/guaranteed\'         |
+|                                                                       |
+| \- Use \'support your journey\' instead of \'lose weight\'            |
+|                                                                       |
+| \- Add disclaimers for any health-adjacent content                    |
+|                                                                       |
+| \`;                                                                   |
+|                                                                       |
+| // 5. Assemble the complete system prompt                             |
+|                                                                       |
+| const systemPrompt = \`\${staticCore}                                 |
+|                                                                       |
+| \## BRAND RULES (from CorpFit Knowledge Base)                         |
+|                                                                       |
+| \${brandRulesText}                                                    |
+|                                                                       |
+| \## BANNED PHRASES (NEVER use these in any content)                   |
+|                                                                       |
+| \${bannedText}                                                        |
+|                                                                       |
+| \`;                                                                   |
+|                                                                       |
+| // 6. Create the production brief (user message)                      |
+|                                                                       |
+| const userMessage = \`PRODUCTION BRIEF:                               |
+|                                                                       |
+| \- Topic: \${brief.topic}                                             |
+|                                                                       |
+| \- Platform: \${brief.platform}                                       |
+|                                                                       |
+| \- Module: \${brief.module}                                           |
+|                                                                       |
+| \- Funnel: \${brief.funnel}                                           |
+|                                                                       |
+| \- Duration: \${brief.duration}                                       |
+|                                                                       |
+| Generate a complete content package following the output format       |
+| above.\`;                                                             |
+|                                                                       |
+| // 7. Return both prompts for the HTTP Request node                   |
+|                                                                       |
+| return \[{                                                            |
+|                                                                       |
+| json: {                                                               |
+|                                                                       |
+| systemPrompt,                                                         |
+|                                                                       |
+| userMessage,                                                          |
+|                                                                       |
+| brief                                                                 |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| }\];                                                                  |
++-----------------------------------------------------------------------+
+
+**STEP 7: Update the HTTP Request Node (Claude API)**
+
+Now update your existing Claude API node to use the assembled prompt
+from the Code node instead of the hardcoded prompt.
+
+**What to do:**
+
+27. Click on your existing HTTP Request node
+
+28. In the Body section, update the JSON to reference the assembled
+    prompt:
+
++-----------------------------------------------------------------------+
+| {                                                                     |
+|                                                                       |
+| \"model\": \"claude-sonnet-4-20250514\",                              |
+|                                                                       |
+| \"max_tokens\": 4096,                                                 |
+|                                                                       |
+| \"system\": \"{{ \$json.systemPrompt }}\",                            |
+|                                                                       |
+| \"messages\": \[                                                      |
+|                                                                       |
+| {                                                                     |
+|                                                                       |
+| \"role\": \"user\",                                                   |
+|                                                                       |
+| \"content\": \"{{ \$json.userMessage }}\"                             |
+|                                                                       |
+| }                                                                     |
+|                                                                       |
+| \]                                                                    |
+|                                                                       |
+| }                                                                     |
++-----------------------------------------------------------------------+
+
++-----------------------------------------------------------------------+
+| **IMPORTANT: Escape Characters**                                      |
+|                                                                       |
+| n8n expressions inside JSON can be tricky. If you get errors, try     |
+| using the Expression Editor (click the gear icon next to the Body     |
+| field) and build the JSON there. Make sure the systemPrompt and       |
+| userMessage don\'t contain unescaped quotes that break the JSON.      |
++-----------------------------------------------------------------------+
+
++-----------------------------------------------------------------------+
+| **ALTERNATIVE APPROACH**                                              |
+|                                                                       |
+| If JSON escaping gives you trouble, you can use a second Code node    |
+| before the HTTP Request that builds the entire API request body       |
+| programmatically. This avoids escaping issues entirely. Ask Claude to |
+| help you write this if needed.                                        |
++-----------------------------------------------------------------------+
+
+**STEP 8: Test Your RAG-Enhanced Workflow**
+
+Time to run it! Use the same three test briefs from Day 3 to compare
+results.
+
+**Test 1: TikTok B2C**
+
+  ----------------- -----------------------------------------------------
+  **Module**        steps
+
+  **Platform**      tiktok
+
+  **Funnel**        b2c
+
+  **Topic**         Desk stretches for office workers
+
+  **Duration**      30 seconds
+  ----------------- -----------------------------------------------------
+
+**Test 2: Instagram B2C**
+
+  ----------------- -----------------------------------------------------
+  **Module**        meals
+
+  **Platform**      instagram
+
+  **Funnel**        b2c
+
+  **Topic**         3 high-protein smoothie recipes
+
+  **Duration**      60 seconds
+  ----------------- -----------------------------------------------------
+
+**Test 3: LinkedIn B2B**
+
+  ----------------- -----------------------------------------------------
+  **Module**        events
+
+  **Platform**      linkedin
+
+  **Funnel**        b2b
+
+  **Topic**         Company wellness challenge launch
+
+  **Duration**      45 seconds
+  ----------------- -----------------------------------------------------
+
+For each test, update the values in the \"Parse Brief\" Set node, then
+click \"Test Workflow\" (the play button).
+
+**STEP 9: Verify RAG is Working**
+
+After running each test, check these things to confirm Qdrant
+integration is working:
+
+**Check 1: Click the \"Get Brand Rules\" node output**
+
+You should see 15 results with categories like \"voice_tone\",
+\"modules\", \"colors\", etc. The results should be RELEVANT to your
+brief\'s module and platform.
+
+**Check 2: Click the \"Get Banned Phrases\" node output**
+
+You should see all 55 banned phrases listed with their categories and
+reasons.
+
+**Check 3: Click the \"Assemble Prompt\" node output**
+
+The systemPrompt field should show your static core PLUS the brand rules
+and banned phrases from Qdrant, merged together into one complete
+prompt.
+
+**Check 4: Claude\'s output**
+
+The generated content should follow the UAF-1.0 format with emoji
+headers, include a SELF-CHECK REPORT confirming zero banned phrases, and
+match the platform tone (casual for TikTok, professional for LinkedIn).
+
+**Validation Checklist**
+
+Use this checklist to confirm Day 4 is complete:
+
+  -------- -----------------------------------------------------------------
+  **\#**   **Checkpoint**
+
+  1        Qdrant credential created in n8n (connects to http://qdrant:6333)
+
+  2        \"Get Brand Rules\" node returns relevant results from
+           funfit_brand_rules
+
+  3        \"Get Banned Phrases\" node returns all 55 banned phrases
+
+  4        \"Assemble Prompt\" node merges static core + Qdrant results
+           correctly
+
+  5        Test 1 (TikTok/Steps) passes with correct tone and format
+
+  6        Test 2 (Instagram/Meals) passes with correct tone and format
+
+  7        Test 3 (LinkedIn/Events) passes with correct tone and format
+
+  8        Zero banned phrases in any generated content
+
+  9        Cost per generation similar or lower than Day 3 (\$0.005)
+
+  10       Backup of Day 3 workflow saved
+  -------- -----------------------------------------------------------------
+
+**Troubleshooting**
+
+**Problem: Qdrant node shows \"Connection refused\"**
+
+Fix: Make sure you\'re using http://qdrant:6333 (not localhost:6333).
+Inside Docker, services use container names.
+
+**Problem: Qdrant returns empty results**
+
+Fix: Check that the embedding model is connected. The Qdrant node needs
+an Ollama Embeddings sub-node with model \"nomic-embed-text\" and Base
+URL \"http://ollama:11434\".
+
+**Problem: Claude returns an error about invalid JSON**
+
+Fix: The systemPrompt likely contains characters that break JSON
+(quotes, newlines). Use a Code node to build the HTTP request body
+instead of inline JSON expressions. This gives you full control over
+escaping.
+
+**Problem: Output format is wrong (no emoji headers)**
+
+Fix: Check the \"Assemble Prompt\" node output. The static core should
+include the OUTPUT FORMAT section. If it\'s missing, the code has an
+error --- review the template literal in the code node.
+
+**Problem: Brand rules seem irrelevant to the brief**
+
+Fix: The search query in the Qdrant node determines relevance. Make sure
+the Prompt field includes {{ \$json.module }} and {{ \$json.platform }}
+from the Parse Brief node. More specific queries = more relevant
+results.
+
+**What\'s Next: Days 5-6**
+
+With RAG working, the remaining Day 4-6 tasks are:
+
+  ----------- ----------------------------------- -----------------------
+  **Day**     **Task**                            **Status**
+
+  **Day 4**   Qdrant RAG integration (this guide) **IN PROGRESS**
+
+  **Day 5**   Add output parsing node (extract    UP NEXT
+              structured JSON from Claude)        
+
+  **Day 5**   Add banned phrases pre-check        UP NEXT
+              (before Claude, not just after)     
+
+  **Day 6**   Store generated content in          PENDING
+              PostgreSQL content_logs table       
+
+  **Day 6**   Run comprehensive testing: 5        PENDING
+              different briefs across all modules 
+  ----------- ----------------------------------- -----------------------
+
+**CORPFIT** QUANTUM AI Content Factory \| Day 4 Implementation Guide \|
+February 2026

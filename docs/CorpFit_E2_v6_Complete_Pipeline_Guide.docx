@@ -1,0 +1,1081 @@
+**CORPFIT**
+
+*Circle of Resilient People*
+
+**ELECTRON-2 Content Generator**
+
+Complete Pipeline Reference Guide
+
+15-Node RAG + QA Pipeline \| Version 6 \| Day 10
+
+February 8, 2026
+
+  -------------------------------------------------------------------------
+  **15 NODES**      **21/21 TESTS**   **\$0.008/PIECE**   **3 QA GATES**
+  ----------------- ----------------- ------------------- -----------------
+
+  -------------------------------------------------------------------------
+
+# Table of Contents
+
+1\. Executive Summary
+
+2\. Architecture Overview
+
+3\. Node-by-Node Reference (15 Nodes)
+
+4\. QA Gate System Deep Dive
+
+5\. Data Flow --- How Data Transforms Through Each Node
+
+6\. PostgreSQL Database Schema
+
+7\. Qdrant Vector Database
+
+8\. Docker Infrastructure
+
+9\. Cost Analysis
+
+10\. Workflow Evolution (v1 → v6)
+
+11\. Test Results (Days 1--10)
+
+12\. Troubleshooting Guide
+
+13\. Key Technical Lessons
+
+14\. File Locations
+
+# 1. Executive Summary
+
+The ELECTRON-2 Content Generator is the core content production engine
+for the CorpFit QUANTUM AI Content Factory. It is a 15-node n8n workflow
+that takes a production brief (topic, platform, module, funnel,
+duration), generates brand-compliant wellness content using Claude
+Sonnet 4, validates it through 3 AI-powered QA gates using Claude Haiku,
+and stores the result in PostgreSQL.
+
+The pipeline covers all 5 CorpFit content modules (Steps, Workouts,
+Meals, Check-in, Events), both funnels (B2C individual and B2B
+corporate), and 4 platforms (TikTok, Instagram, LinkedIn, YouTube). It
+produces complete video content briefs including hooks, scripts,
+on-screen text, storyboards, captions, CTAs, and disclaimers.
+
+## Key Numbers
+
+  ----------------------------------------------------------------------------------
+  **Metric**                          **Value**
+  ----------------------------------- ----------------------------------------------
+  Pipeline Nodes                      **15**
+
+  Tests Passed (Days 1-10)            **21/21 (100%)**
+
+  Cost Per Content Piece              **\~\$0.008**
+
+  Monthly Cost (72 pieces)            **\~\$0.576**
+
+  Content Generation Model            **Claude Sonnet 4**
+
+  QA Review Model                     **Claude Haiku 4.5**
+
+  QA Gates                            **3 (Health, Brand, Audience)**
+
+  Content Modules                     **5 (Steps, Workouts, Meals, Check-in,
+                                      Events)**
+
+  Platforms                           **4 (TikTok, Instagram, LinkedIn, YouTube)**
+
+  Funnels                             **2 (B2C individual, B2B corporate)**
+
+  Pipeline Version                    **v6**
+
+  n8n URL                             **localhost:5678/workflow/kWpE5bF6nRatotsq**
+  ----------------------------------------------------------------------------------
+
+# 2. Architecture Overview
+
+## 2.1 The Big Picture
+
+ELECTRON-2 is one agent in a larger multi-agent system called the
+QUANTUM AI Content Factory. The full system has 4 agents. ELECTRON-2 is
+fully operational and ELECTRON-1 pipeline is built (Day 10):
+
+-   **QUANTUM:** QUANTUM --- Orchestrator and final QA authority
+    (prompts written Day 7, workflow planned for future)
+
+-   **ELECTRON-1:** ELECTRON-1 --- Trend discovery agent (Phase 4, IN
+    PROGRESS --- 9-node pipeline built Day 10)
+
+-   **ELECTRON-2:** ELECTRON-2 --- Content writer and QA pipeline (THIS
+    DOCUMENT) ✔️
+
+-   **ELECTRON-3:** ELECTRON-3 --- Video producer and publisher (Phase
+    5, Days 13-15)
+
+## 2.2 Hybrid RAG Architecture
+
+The pipeline uses a hybrid approach combining two types of knowledge:
+
+  -----------------------------------------------------------------------
+  **STATIC CORE (\~1,200 words)**     **DYNAMIC KNOWLEDGE (from Qdrant)**
+  ----------------------------------- -----------------------------------
+  Hardcoded in Assemble Prompt node.  Pulled at runtime from Qdrant
+  Defines WHO the agent is and HOW it vector database. Tells WHAT to
+  works. Never changes. Includes:     follow. Changes and grows over
+  agent identity, output format with  time. Includes: brand colors,
+  emoji headers, workflow steps       fonts, visual guidelines,
+  (Parse \> Plan \> Create \> Check), platform-specific tone rules,
+  safe framing rules.                 module definitions, 71 banned
+                                      phrases.
+
+  -----------------------------------------------------------------------
+
+> 💡 *Analogy: The static core is like a chef\'s training and cooking
+> technique (doesn\'t change). The dynamic knowledge is like today\'s
+> menu and ingredient restrictions (changes regularly). You don\'t
+> retrain the chef every time you add a new dish --- you just update the
+> menu.*
+
+## 2.3 Pipeline Flow (15 Nodes)
+
+The complete pipeline flows left-to-right in n8n:
+
+> Manual Trigger → Parse Brief → CorpFit Qdrant → Get Banned Phrases →
+>
+> Assemble Prompt → Call Claude API → Parse Output → Banned Phrase Check
+> →
+>
+> QA Gate 1 Health → QA Gate 2 Brand → QA Gate 3 Audience →
+>
+> Format for Storage → Store to content_logs
+>
+> (+ 2 Embedding nodes: Embeddings Ollama, Embeddings Ollama1)
+
+# 3. Node-by-Node Reference
+
+Every node in the ELECTRON-2 pipeline, explained in detail.
+
+## Node 1: Manual Trigger
+
+  -----------------------------------------------------------------------
+  **Type**          Manual Trigger (n8n built-in)
+  ----------------- -----------------------------------------------------
+  **Purpose**       Starts the pipeline when you click \'Execute
+                    workflow\'
+
+  **Input**         None (human clicks the button)
+
+  **Output**        Empty trigger signal that starts the chain
+
+  **Added**         Day 3
+  -----------------------------------------------------------------------
+
+In the future, this will be replaced by a QUANTUM schedule trigger
+(cron) that runs automatically on a daily or weekly schedule.
+
+────────────────────────────────────────────────────────────
+
+## Node 2: Parse Brief
+
+  -----------------------------------------------------------------------
+  **Type**          Set Node (manual fields)
+  ----------------- -----------------------------------------------------
+  **Purpose**       Defines the content brief --- WHAT to create
+
+  **Input**         Trigger signal from Node 1
+
+  **Output**        JSON object with 5 fields: module, platform, funnel,
+                    topic, duration
+
+  **Added**         Day 4
+  -----------------------------------------------------------------------
+
+### Fields
+
+-   **module:** module --- Which CorpFit module: steps, workouts, meals,
+    checkin, events
+
+-   **platform:** platform --- Target platform: tiktok, instagram,
+    linkedin, youtube
+
+-   **funnel:** funnel --- Audience type: b2c (individuals) or b2b
+    (corporate HR)
+
+-   **topic:** topic --- The content subject, e.g. \'3 simple habits to
+    sleep better tonight\'
+
+-   **duration:** duration --- Video length: \'30 seconds\', \'60
+    seconds\', etc.
+
+> 💡 *In the future, ELECTRON-1 will auto-generate briefs from trending
+> topics and feed them here.*
+
+────────────────────────────────────────────────────────────
+
+## Node 3: CorpFit Qdrant (Brand Rules)
+
+  -----------------------------------------------------------------------
+  **Type**          Qdrant Vector Store Retrieval
+  ----------------- -----------------------------------------------------
+  **Purpose**       Retrieves the most relevant brand rules for this
+                    specific brief
+
+  **Collection**    corpfit_brand_rules (44 entries)
+
+  **Input**         The topic from Parse Brief, converted to a vector via
+                    Embeddings Ollama
+
+  **Output**        \~15 most relevant brand rule chunks (text snippets)
+
+  **Embedding       nomic-embed-text (via Ollama container)
+  Model**           
+
+  **Added**         Day 4
+  -----------------------------------------------------------------------
+
+This node connects to the Embeddings Ollama sub-node which converts the
+topic text into a 768-dimensional vector. Qdrant then finds the 15 brand
+rule entries most semantically similar to the topic.
+
+> 💡 *The brand rules include: CorpFit personality traits,
+> platform-specific tone guidelines, color codes (#FF6B35 Coral, #004E89
+> Blue), module definitions, safe/unsafe framing language, and more.*
+
+────────────────────────────────────────────────────────────
+
+## Node 4: Get Banned Phrases
+
+  -----------------------------------------------------------------------
+  **Type**          Qdrant Vector Store Retrieval
+  ----------------- -----------------------------------------------------
+  **Purpose**       Retrieves banned phrases relevant to this content
+                    topic
+
+  **Collection**    corpfit_banned_phrases (71 entries)
+
+  **Input**         The topic from Parse Brief, converted via Embeddings
+                    Ollama1
+
+  **Output**        Most relevant banned phrase entries for downstream
+                    checking
+
+  **Added**         Day 4
+  -----------------------------------------------------------------------
+
+Banned phrases include words and phrases CorpFit content must never use,
+such as body-shaming language, aggressive fitness terminology,
+unqualified medical claims, and competitor brand names.
+
+────────────────────────────────────────────────────────────
+
+## Node 5: Assemble Prompt
+
+  -----------------------------------------------------------------------
+  **Type**          Code Node (JavaScript)
+  ----------------- -----------------------------------------------------
+  **Purpose**       Combines the static core prompt with dynamic Qdrant
+                    knowledge into one mega-prompt
+
+  **Input**         Brief from Parse Brief + brand rules from Qdrant +
+                    banned phrases from Qdrant
+
+  **Output**        One assembled prompt string (\~3,300 words) ready for
+                    Claude API
+
+  **Added**         Day 4
+  -----------------------------------------------------------------------
+
+### What It Builds
+
+The assembled prompt has this structure:
+
+1.  **Section 1 ---** Agent identity: \'You are ELECTRON-2, the Content
+    Creation Specialist for CorpFit\'
+
+2.  **Section 2 ---** The 10-layer UAF-1.0 framework (Universal Agent
+    Framework) with workflow steps
+
+3.  **Section 3 ---** Dynamic brand rules retrieved from Qdrant
+    (injected here)
+
+4.  **Section 4 ---** Dynamic banned phrases retrieved from Qdrant
+    (injected here)
+
+5.  **Section 5 ---** Output format specification with emoji headers for
+    structured parsing
+
+6.  **Section 6 ---** The production brief: topic, platform, module,
+    funnel, duration
+
+> 💡 *This is the hybrid RAG in action: Sections 1, 2, 5 are static
+> (hardcoded). Sections 3, 4 are dynamic (from Qdrant). Section 6 is the
+> specific request.*
+
+────────────────────────────────────────────────────────────
+
+## Node 6: Call Claude API
+
+  -----------------------------------------------------------------------
+  **Type**          Code Node (JavaScript)
+  ----------------- -----------------------------------------------------
+  **Purpose**       Sends the assembled prompt to Claude Sonnet 4 and
+                    receives generated content
+
+  **Model**         claude-sonnet-4-20250514
+
+  **API Endpoint**  https://api.anthropic.com/v1/messages
+
+  **Max Tokens**    4096
+
+  **Cost**          \~\$0.005 per content piece
+
+  **HTTP Method**   this.helpers.httpRequest() (NOT fetch, NOT \$http)
+
+  **Added**         Day 4
+  -----------------------------------------------------------------------
+
+The node sends the full assembled prompt to Claude Sonnet 4 and receives
+a structured response with emoji-delimited sections. The response
+typically contains \~1,500 tokens of generated content.
+
+> ⚠️ *CRITICAL: n8n Code nodes do NOT support fetch() or \$http. You
+> MUST use this.helpers.httpRequest(). This was a major discovery on Day
+> 4 that cost hours of debugging.*
+
+────────────────────────────────────────────────────────────
+
+## Node 7: Parse Output
+
+  -----------------------------------------------------------------------
+  **Type**          Code Node (JavaScript)
+  ----------------- -----------------------------------------------------
+  **Purpose**       Parses Claude\'s raw text response into structured
+                    JSON fields
+
+  **Input**         Raw text from Claude API containing emoji-delimited
+                    sections
+
+  **Output**        Flat JSON with individual fields: topic, module,
+                    platform, hooks, script, etc.
+
+  **Added**         Day 5
+  -----------------------------------------------------------------------
+
+### Parsed Fields
+
+Claude responds with emoji headers like 🎬 HOOKS, 📝 SCRIPT, etc. This
+node extracts each section into its own field:
+
+-   brief_summary, hooks, script, on_screen_text, storyboard,
+    caption_short, caption_long, cta, disclaimer, self_check
+
+-   Plus metadata: topic, module, platform, funnel, duration (passed
+    through from brief)
+
+────────────────────────────────────────────────────────────
+
+## Node 8: Banned Phrase Check
+
+  -----------------------------------------------------------------------
+  **Type**          Code Node (JavaScript)
+  ----------------- -----------------------------------------------------
+  **Purpose**       Scans all content fields for banned phrases (first
+                    safety layer)
+
+  **Input**         Parsed content fields from Node 7
+
+  **Output**        All content fields + banned_check_passed
+                    (true/false) + flagged_phrases array
+
+  **Added**         Day 5
+  -----------------------------------------------------------------------
+
+This is a simple text-matching check against the 71 banned phrases from
+Qdrant. It\'s a fast, deterministic first filter before the more
+expensive AI-powered QA gates.
+
+> 💡 *Think of it as a metal detector at the airport entrance (fast,
+> catches obvious issues). The QA gates are like the detailed luggage
+> scanner (slower, catches subtle issues).*
+
+────────────────────────────────────────────────────────────
+
+## Nodes 9-11: QA Gate System (3 Gates)
+
+These are the AI-powered quality assurance gates. Each gate calls Claude
+Haiku with a specialized prompt, parses the response, and passes all
+data through to the next gate. If any gate fails, the content is
+ultimately marked as BLOCKED.
+
+All 3 gates follow the same code pattern (see Section 4 for details):
+
+7.  Read all fields from \$json (flat data from previous node)
+
+8.  Build a specialized system prompt for this gate\'s focus
+
+9.  Build a user message containing the content to review
+
+10. Call Claude Haiku via this.helpers.httpRequest()
+
+11. Parse JSON response with robust fallback (regex rescue on failure)
+
+12. Copy ALL original fields to output + append gate results
+
+### Node 9: QA Gate 1 --- Health Claims
+
+  -----------------------------------------------------------------------
+  **Focus**         Medical claims, guaranteed outcomes, unsafe advice
+  ----------------- -----------------------------------------------------
+  **Stance**        STRICT on medical claims, LENIENT on general wellness
+                    encouragement
+
+  **Output Fields** gate1_result, gate1_confidence, gate1_violations,
+                    gate1_notes
+  -----------------------------------------------------------------------
+
+### Node 10: QA Gate 2 --- Brand & Tone
+
+  -----------------------------------------------------------------------
+  **Focus**         Brand voice compliance, platform tone match, Fun Test
+                    (1-5 score)
+  ----------------- -----------------------------------------------------
+  **Stance**        Verifies CorpFit personality: Supportive Coach, Fun
+                    Friend, Reliable Guide
+
+  **Output Fields** gate2_result, gate2_confidence, gate2_fun_score,
+                    gate2_violations, gate2_notes
+  -----------------------------------------------------------------------
+
+### Node 11: QA Gate 3 --- Audience Fit
+
+  -----------------------------------------------------------------------
+  **Focus**         Module-content alignment, funnel tone match, platform
+                    format fit
+  ----------------- -----------------------------------------------------
+  **Stance**        Ensures B2C is fun/personal, B2B is
+                    professional/ROI-focused
+
+  **Output Fields** gate3_result, gate3_confidence, gate3_violations,
+                    gate3_notes
+  -----------------------------------------------------------------------
+
+Gate 3 also computes the FINAL DECISION:
+
+-   **qa_decision:** qa_decision: \'APPROVED\' or \'BLOCKED\' (all 3
+    gates must PASS for APPROVED)
+
+-   **qa_quality_score:** qa_quality_score: average confidence across
+    all 3 gates
+
+-   **qa_fun_score:** qa_fun_score: from Gate 2 (1-5 scale)
+
+-   **qa_failed_gate:** qa_failed_gate: which gate failed first (or
+    \'NONE\')
+
+-   **qa_approval_token:** qa_approval_token: \'PKT-YYYY-MM-DD-NNN\'
+    format (or \'NONE\' if blocked)
+
+────────────────────────────────────────────────────────────
+
+## Node 12: Format for Storage
+
+  -----------------------------------------------------------------------
+  **Type**          Code Node (JavaScript)
+  ----------------- -----------------------------------------------------
+  **Purpose**       Maps all pipeline fields to PostgreSQL column names
+
+  **Input**         Full data from Gate 3 (all content + all gate
+                    results)
+
+  **Output**        Clean JSON matching exact PostgreSQL content_logs
+                    schema
+
+  **Pipeline        v6 (set in this node)
+  Version**         
+
+  **Added**         Day 6 (updated Day 9)
+  -----------------------------------------------------------------------
+
+### Key Mappings
+
+-   qa_passed: true if qa_decision === \'APPROVED\'
+
+-   qa_status: \'approved\' or \'blocked\'
+
+-   qa_violations: JSON.stringify of all violations from all 3 gates
+    combined
+
+-   qa_violations_count: total count across all gates
+
+-   approval_token: PKT token or \'NONE\'
+
+-   status: \'approved\' or \'blocked\'
+
+-   model: \'claude-sonnet-4-20250514\'
+
+-   pipeline_version: \'v6\'
+
+────────────────────────────────────────────────────────────
+
+## Node 13: Store to content_logs
+
+  -----------------------------------------------------------------------
+  **Type**          PostgreSQL Insert Node (n8n built-in)
+  ----------------- -----------------------------------------------------
+  **Purpose**       Writes the final content + QA results to PostgreSQL
+                    database
+
+  **Table**         content_logs
+
+  **Connection**    postgres:5432 (Docker container name, NOT localhost)
+
+  **Database**      corpfit
+
+  **Added**         Day 6
+  -----------------------------------------------------------------------
+
+────────────────────────────────────────────────────────────
+
+## Nodes 14-15: Embedding Sub-Nodes
+
+These are helper nodes used by the Qdrant vector store nodes (Nodes 3
+and 4). They convert text into 768-dimensional vectors using the
+nomic-embed-text model running in the Ollama Docker container.
+
+-   **Node 14:** Embeddings Ollama --- converts topic text for CorpFit
+    Qdrant (brand rules) search
+
+-   **Node 15:** Embeddings Ollama1 --- converts topic text for Get
+    Banned Phrases search
+
+Both connect to Ollama at http://ollama:11434 (Docker container name).
+
+# 4. QA Gate System Deep Dive
+
+## 4.1 Why Inline Gates (Not Sub-Workflow)
+
+Originally (Day 8-9), the QA gates were built as a separate QUANTUM QA
+Reviewer workflow with 14 nodes. ELECTRON-2 called it using n8n\'s
+Execute Sub-Workflow node. However, a critical bug was discovered: the
+sub-workflow trigger received items but with EMPTY JSON payloads. All
+content fields arrived as empty strings.
+
+After extensive debugging (testing \$json, \$input.all(),
+\$input.first().json, and adding debug_keys/debug_count diagnostics),
+the root cause was identified as n8n\'s sub-workflow data passing
+limitation --- the trigger node receives item count but not the actual
+JSON content.
+
+The solution: move all 3 QA gates inline as Code nodes directly inside
+ELECTRON-2. This eliminated the data passthrough issue entirely since
+data never leaves the workflow context. The standalone QUANTUM QA
+Reviewer workflow remains available for future refactoring once n8n\'s
+sub-workflow behavior is better understood.
+
+## 4.2 Gate 1 Tuning Story
+
+The initial Gate 1 prompt said \'You are STRICT. When in doubt, FLAG
+IT.\' This caused legitimate wellness content to be blocked:
+
+-   Sleep tips blocked for \'missing disclaimers\' (Category D)
+
+-   Step counting blocked for \'implicit health claims\' (Category E)
+
+-   Phrases like \'actually work\' flagged as guaranteed outcomes
+
+The fix: changed the stance to \'STRICT on medical claims but LENIENT on
+general wellness encouragement\' and added explicit DO NOT FLAG rules
+for general wellness tips, encouraging movement, fun motivational
+language, and missing disclaimers on non-medical content.
+
+> ⚠️ *Key lesson: QA gates need to understand the CONTEXT of the
+> platform. A wellness app encouraging walking is fundamentally
+> different from a medical website prescribing treatment. The gate
+> prompt must reflect this.*
+
+## 4.3 Robust JSON Parser
+
+Every gate includes a robust JSON parser that handles Claude Haiku\'s
+sometimes messy output:
+
+13. **Step 1:** Strip markdown code fences (\`\`\`json \... \`\`\`) that
+    Haiku sometimes adds
+
+14. **Step 2:** Find JSON boundaries (first \'{\' to last \'}\')
+
+15. **Step 3:** Attempt JSON.parse()
+
+16. **Step 4:** If parse fails, regex rescue: search for
+    \'\"result\":\"PASS\"\' in raw text
+
+17. **Step 5:** If PASS found, construct a valid PASS response (prevents
+    false blocks from malformed JSON)
+
+18. **Step 6:** If FAIL or no match, return FAIL with PARSE_ERROR
+    violation
+
+## 4.4 Cost Per Gate
+
+  -----------------------------------------------------------------------
+  **Gate**                **Model**               **Cost/Call**
+  ----------------------- ----------------------- -----------------------
+  Gate 1: Health Claims   Claude Haiku 4.5        \~\$0.001
+
+  Gate 2: Brand Tone      Claude Haiku 4.5        \~\$0.001
+
+  Gate 3: Audience Fit    Claude Haiku 4.5        \~\$0.001
+  -----------------------------------------------------------------------
+
+All 3 gates run sequentially (not in parallel) on every content piece.
+Total QA cost: \~\$0.003 per piece.
+
+# 5. Data Flow --- How Data Transforms
+
+This section shows what data looks like at each stage of the pipeline.
+
+## Stage 1: Parse Brief Output
+
+> { module: \"steps\", platform: \"tiktok\", funnel: \"b2c\",
+>
+> topic: \"fun ways to hit 10000 steps\", duration: \"30 seconds\" }
+
+## Stage 2: After Qdrant Retrieval
+
+> Same brief fields + 15 brand rule chunks + banned phrase chunks
+
+## Stage 3: After Assemble Prompt
+
+> One massive prompt string (\~3,300 words) ready for Claude API
+
+## Stage 4: After Claude API
+
+> Raw text with emoji headers: 🎬 HOOKS: \... 📝 SCRIPT: \...
+
+## Stage 5: After Parse Output
+
+> { topic, module, platform, funnel, duration, brief_summary,
+>
+> hooks, script, on_screen_text, storyboard, caption_short,
+>
+> caption_long, cta, disclaimer, self_check }
+
+## Stage 6: After Banned Phrase Check
+
+> Same fields + banned_check_passed: true/false + flagged_phrases: \[\]
+
+## Stage 7: After QA Gate 1
+
+> Same fields + gate1_result, gate1_confidence, gate1_violations,
+> gate1_notes
+
+## Stage 8: After QA Gate 2
+
+> Same fields + gate2_result, gate2_confidence, gate2_fun_score,
+> gate2_violations
+
+## Stage 9: After QA Gate 3
+
+> Same fields + gate3_result + qa_decision, qa_quality_score,
+> qa_fun_score,
+>
+> qa_failed_gate, qa_approval_token
+
+## Stage 10: After Format for Storage
+
+> Clean PostgreSQL-ready JSON with all 28 columns mapped
+
+# 6. PostgreSQL Database Schema
+
+All content is stored in the content_logs table in the corpfit database.
+
+## 6.1 Connection Details
+
+-   **Host:** Host: postgres (Docker container name)
+
+-   **Port:** Port: 5432
+
+-   **Database:** Database: corpfit
+
+-   **Auth:** User/Password: configured in Docker compose
+
+## 6.2 content_logs Table (28 Columns)
+
+  --------------------------------------------------------------------------
+  **Column**            **Type**    **Description**
+  --------------------- ----------- ----------------------------------------
+  id                    SERIAL PK   Auto-incrementing primary key
+
+  module                VARCHAR     steps, workouts, meals, checkin, events
+
+  platform              VARCHAR     tiktok, instagram, linkedin, youtube
+
+  funnel                VARCHAR     b2c or b2b
+
+  topic                 TEXT        The content topic/subject
+
+  duration              VARCHAR     Video duration (30 seconds, etc.)
+
+  brief_summary         TEXT        Generated content summary
+
+  hooks                 TEXT        Video hook options
+
+  script                TEXT        Full video script
+
+  on_screen_text        TEXT        Text overlays for video
+
+  storyboard            TEXT        Scene-by-scene visual guide
+
+  caption_short         TEXT        Short caption for feed
+
+  caption_long          TEXT        Detailed caption with hashtags
+
+  cta                   TEXT        Call to action
+
+  disclaimer            TEXT        Health/legal disclaimers
+
+  self_check            TEXT        Agent\'s self-assessment
+
+  qa_passed             BOOLEAN     true = APPROVED, false = BLOCKED
+
+  qa_violations_count   INTEGER     Total violations across all 3 gates
+
+  qa_violations         JSONB       Detailed violation objects (category,
+                                    severity, fix)
+
+  qa_status             VARCHAR     \'approved\' or \'blocked\'
+
+  raw_content           TEXT        Reserved for raw Claude response
+
+  generated_at          TIMESTAMP   When content was generated
+
+  qa_checked_at         TIMESTAMP   When QA review completed
+
+  status                VARCHAR     Lifecycle status (approved/blocked)
+
+  approval_token        VARCHAR     PKT-YYYY-MM-DD-NNN or NONE
+
+  pipeline_version      VARCHAR     v6 (current)
+
+  model                 VARCHAR     claude-sonnet-4-20250514
+  --------------------------------------------------------------------------
+
+The table has 6 indexes for fast querying on: id, module, platform,
+status, qa_passed, and generated_at.
+
+# 7. Qdrant Vector Database
+
+  ------------------------------------------------------------------------
+  **Collection**           **Entries**             **Purpose**
+  ------------------------ ----------------------- -----------------------
+  corpfit_brand_rules      44                      Brand voice, tone,
+                                                   colors, modules
+
+  corpfit_banned_phrases   71                      Words/phrases content
+                                                   must avoid
+  ------------------------------------------------------------------------
+
+Dashboard: http://localhost:6333/dashboard
+
+> ⚠️ *Collections were migrated from funfit\_\* to corpfit\_\* on Day 5.
+> Always use corpfit\_ prefix.*
+
+# 8. Docker Infrastructure
+
+All services run as Docker containers on the Windows laptop 24/7:
+
+  -----------------------------------------------------------------------
+  **Service**       **Port**    **Container       **Purpose**
+                                Name**            
+  ----------------- ----------- ----------------- -----------------------
+  n8n               :5678       n8n               Workflow automation
+
+  Qdrant            :6333       qdrant            Vector database
+
+  PostgreSQL        :5432       postgres          Persistent storage
+
+  Ollama            :11434      ollama            Local embeddings
+
+  Open WebUI        :3000       open-webui        Chat interface
+
+  Portainer         :9000       portainer         Docker management
+  -----------------------------------------------------------------------
+
+> ⚠️ *CRITICAL: In n8n Code nodes, always use Docker container names
+> (qdrant, ollama, postgres) NOT localhost. Services communicate via
+> Docker network.*
+
+# 9. Cost Analysis
+
+  -----------------------------------------------------------------------
+  **Component**                 **Per Piece**        **Monthly (72)**
+  ----------------------------- -------------------- --------------------
+  Content Generation (Sonnet)   \~\$0.005            \~\$0.36
+
+  QA Gates x3 (Haiku)           \~\$0.003            \~\$0.216
+
+  **LLM API TOTAL**             **\~\$0.008**        **\~\$0.576**
+  -----------------------------------------------------------------------
+
+Full monthly operational costs including video tools: \$172-352 (Runway
+\$35, Pika \$8, HeyGen \$24, Buffer \$25, electricity). The LLM API cost
+is a tiny fraction of total operations. ELECTRON-1 Trend Scout adds
+\~\$0.024/month (Haiku scoring at \~\$0.002/run, 3x/week) --- combined
+E1+E2 LLM API: \~\$0.60/month.
+
+# 10. Workflow Evolution
+
+  -------------------------------------------------------------------------------------
+  **Ver**   **Day**   **Nodes**   **What Changed**
+  --------- --------- ----------- -----------------------------------------------------
+  v1        3         2           Manual Trigger + HTTP Request with hardcoded
+                                  3,300-word prompt
+
+  v2        4         6           \+ Parse Brief, Qdrant Brand Rules, Qdrant Banned
+                                  Phrases, Assemble Prompt, Code Node API
+
+  v3        5         8           \+ Parse Output (structured JSON) + Banned Phrase
+                                  Check (dual-layer safety)
+
+  v4        6         10          \+ Store Result (PostgreSQL) + Error Handler (retry
+                                  logic)
+
+  v5        9a        12          \+ Call QUANTUM QA sub-workflow (FAILED --- data
+                                  passthrough bug)
+
+  **v6**    **9b**    **15**      **Replaced sub-workflow with 3 inline QA gates +
+                                  Format for Storage updated**
+  -------------------------------------------------------------------------------------
+
+# 11. Test Results (Days 1--10)
+
+21/21 tests passed (100% success rate) across all 10 days of
+development.
+
+  ----------------------------------------------------------------------------------------------------------------
+  **\#**   **Module**   **Platform**   **Funnel**   **Topic**        **Day**   **Ver**   **Result**     **Viol**
+  -------- ------------ -------------- ------------ ---------------- --------- --------- -------------- ----------
+  1        Steps        TikTok         B2C          Desk stretches   3         v1        **PASS**       0
+
+  2        Meals        Instagram      B2C          Smoothie recipes 3         v1        **PASS**       0
+
+  3        Events       LinkedIn       B2B          Wellness         3         v1        **PASS**       0
+                                                    challenge                                           
+
+  4        Steps        TikTok         B2C          Desk stretches   4         v2        **PASS**       0
+
+  5        Steps        TikTok         B2C          Desk stretches   5         v3        **PASS**       0
+
+  6        Meals        Instagram      B2C          Protein          5         v3        **PASS**       0
+                                                    smoothies                                           
+
+  7        Events       LinkedIn       B2B          Wellness         5         v3        **PASS**       0
+                                                    challenge                                           
+
+  8        Workouts     TikTok         B2C          Quick HIIT       6         v3        **PASS**       0
+
+  9        Check-in     Instagram      B2C          Wind-down        6         v3        **PASS**       0
+                                                    routine                                             
+
+  10       Events       LinkedIn       B2B          Step challenge   6         v3        **PASS**       0
+
+  11       Steps        TikTok         B2C          10k steps lazy   9         v6        **APPROVED**   0
+                                                    Sunday                                              
+
+  12       Check-in     TikTok         B2C          Sleep better     9         v6        **APPROVED**   0
+                                                    tonight                                             
+
+  13       Workouts     TikTok         B2C          Desk stretches   9         v6        **APPROVED**   0
+                                                    energy                                              
+
+  14       Events       LinkedIn       B2B          Corporate        9         v6        **APPROVED**   0
+                                                    wellness week                                       
+
+  15       Meals        Instagram      B2C          High protein     9         v6        **APPROVED**   0
+                                                    snacks                                              
+
+  16       E1-RSS       Nerd Fitness   ---          RSS feed         10        E1v1      **PASS**       0
+                                                    retrieval                                           
+
+  17       E1-RSS       MyFitnessPal   ---          RSS feed         10        E1v1      **PASS**       0
+                                                    retrieval                                           
+
+  18       E1-RSS       Tiny Buddha    ---          RSS feed         10        E1v1      **PASS**       0
+                                                    retrieval                                           
+
+  19       E1-Reddit    r/fitness      ---          Reddit JSON      10        E1v1      **PASS**       0
+                                                    retrieval                                           
+
+  20       E1-Reddit    r/loseit       ---          Reddit JSON      10        E1v1      **PASS**       0
+                                                    retrieval                                           
+
+  21       E1-PubMed    PubMed API     ---          Medical research 10        E1v1      **PASS**       0
+                                                    retrieval                                           
+  ----------------------------------------------------------------------------------------------------------------
+
+# 12. Troubleshooting Guide
+
+  -----------------------------------------------------------------------
+  **Issue**               **Solution**
+  ----------------------- -----------------------------------------------
+  Claude API returns 401  Check API key in the Code node. Verify the
+                          corpfit-quantum key is active in Anthropic
+                          console.
+
+  \'fetch is not          Use this.helpers.httpRequest() instead.
+  defined\' in Code node  Standard fetch() and \$http are NOT available
+                          in n8n Code nodes.
+
+  Qdrant returns empty    Verify collection names are corpfit_brand_rules
+  results                 and corpfit_banned_phrases (not funfit\_\*).
+                          Check dashboard at localhost:6333.
+
+  QA gates return         Haiku sometimes wraps JSON in markdown fences.
+  PARSE_ERROR             The robust parser handles this, but if issues
+                          persist, check raw response in gate output.
+
+  All content gets        Check Gate 1 prompt --- it may be too strict.
+  BLOCKED                 Ensure the \'LENIENT on wellness\' tuning is in
+                          place. Review gate1_violations for false
+                          positives.
+
+  Sub-workflow receives   Known n8n limitation. Use inline Code nodes
+  empty data              instead of Execute Sub-Workflow. This is why v6
+                          uses inline gates.
+
+  PostgreSQL insert fails Verify connection uses postgres:5432 (Docker
+                          name). Check table exists: docker exec -it
+                          postgres psql -U user -d corpfit -c \'\\dt\'
+
+  Docker service          Use container names (qdrant, ollama, postgres)
+  unreachable             NOT localhost in n8n Code nodes. Run \'docker
+                          ps\' to verify containers.
+
+  Output parsing returns  Check Claude\'s raw response for emoji headers.
+  empty fields            If missing, the UAF-1.0 prompt may have been
+                          truncated.
+
+  Template literals cause Use string concatenation (\'a\' + \'b\')
+  SyntaxError             instead of template literals (\`\${a}\`) in n8n
+                          Code nodes when copy-pasting.
+  -----------------------------------------------------------------------
+
+# 13. Key Technical Lessons
+
+Critical discoveries made during Days 1-10 that you should never forget:
+
+19. **Lesson 1:** n8n Code nodes use this.helpers.httpRequest() for HTTP
+    calls. fetch() and \$http do NOT work.
+
+20. **Lesson 2:** Use Docker container names (qdrant, ollama, postgres),
+    never localhost, for inter-service communication.
+
+21. **Lesson 3:** String concatenation (\'a\' + b) works reliably in n8n
+    Code nodes. Template literals (\`\${b}\`) can cause SyntaxError when
+    copy-pasting.
+
+22. **Lesson 4:** n8n sub-workflows do NOT reliably pass JSON data
+    through Execute Sub-Workflow triggers. Use inline Code nodes
+    instead.
+
+23. **Lesson 5:** Claude Haiku sometimes wraps JSON responses in
+    markdown code fences (\`\`\`json\`\`\`). Always include a robust
+    parser with regex fallback.
+
+24. **Lesson 6:** QA gate prompts must match the platform context. A
+    wellness app encouraging walking is different from a medical site.
+    \'STRICT on everything\' causes false positives.
+
+25. **Lesson 7:** Local AI models (llama3.2:3B, llama3.1:8B) are too
+    weak for complex 3,300-word prompts. Claude Sonnet 4 via API is the
+    right choice.
+
+26. **Lesson 8:** The hybrid RAG approach (static core + dynamic Qdrant
+    knowledge) is highly effective. You can update brand rules without
+    changing the workflow.
+
+27. **Lesson 9:** Sequential QA gates save money --- if Gate 1 fails,
+    Gates 2 and 3 still run but could be skipped in future optimization.
+
+28. **Lesson 10:** Always pass ALL fields through every node using the
+    \'copy all keys\' pattern. Losing fields between nodes is the #1
+    cause of bugs.
+
+-   **Lesson 11:** n8n HTTP Request nodes cannot handle complex JSON
+    body interpolation with quotes/special characters. Use Code nodes
+    with this.helpers.httpRequest() instead for API calls that need
+    dynamic content.
+
+-   **Lesson 12:** Claude Haiku model string is
+    claude-3-5-haiku-20241022 (NOT claude-haiku-4-5). Using the wrong
+    model name returns a 404 error from the Anthropic API.
+
+-   **Lesson 13:** Reddit JSON endpoints (e.g.
+    reddit.com/r/fitness/hot.json) return nested data structures ---
+    each response contains multiple posts that need to be unpacked
+    individually during normalization (33 raw items became 51
+    normalized).
+
+# 14. File Locations
+
+## Local Files (Windows)
+
+-   **Root:** C:\\CorpFit\\ --- Project root
+
+-   **Docs:** C:\\CorpFit\\docs\\ --- Word documents and reports
+
+-   **Prompts:** C:\\CorpFit\\prompts\\ --- All agent prompts
+
+-   **Scripts:** C:\\CorpFit\\scripts\\ --- Python scripts
+
+-   **Workflows:** C:\\CorpFit\\workflows\\ --- n8n workflow exports
+
+## Key Prompt Files
+
+-   ELECTRON2_System_Prompt_v2.1.txt --- ELECTRON-2 core prompt
+    (hardcoded in Assemble Prompt)
+
+-   QUANTUM_System_Prompt_v1.0.txt --- QUANTUM orchestrator prompt
+
+-   QUANTUM_QA_Gate1_Health_Claims_v1.0.txt --- Gate 1 reference (now
+    inline in E2)
+
+-   QUANTUM_QA_Gate2_Brand_Tone_v1.0.txt --- Gate 2 reference (now
+    inline in E2)
+
+-   QUANTUM_QA_Gate3_Audience_Fit_v1.0.txt --- Gate 3 reference (now
+    inline in E2)
+
+-   QUANTUM_Planning_Prompts_v1.0.txt --- Planning prompts for future
+    automation
+
+-   ELECTRON1_System_Prompt_v1.0.txt --- ELECTRON-1 Trend Scout prompt
+    (Haiku-optimized, 1,058 words, added Day 10)
+
+## n8n Workflow URLs
+
+-   ELECTRON-2: localhost:5678/workflow/kWpE5bF6nRatotsq
+
+-   QUANTUM QA Reviewer v1 (archived):
+    localhost:5678/workflow/yVoH-fqmg-Q0ZevlUCw3d
+
+-   ELECTRON-1 Trend Scout v1: localhost:5678 (9-node pipeline, built
+    Day 10)
+
+## Anthropic API
+
+-   Workspace: CorpFit
+
+-   API Key Name: corpfit-quantum
+
+-   Content Model: claude-sonnet-4-20250514
+
+-   QA + E1 Model: claude-3-5-haiku-20241022
+
+────────────────────────────────────────────────────────────
+
+ELECTRON-2 v6 Pipeline Reference \| CorpFit QUANTUM AI Content Factory
+
+Prepared: February 9, 2026 \| Day 10 of 21 \| Phases 1-3 Complete, Phase
+4 In Progress
+
+By: Claude (AI Master/PM) & S-H-K (Co-Founder, Product Designer)

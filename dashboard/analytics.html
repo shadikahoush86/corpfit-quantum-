@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics | QUANTUM Mission Control</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x2B23;</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --coral:#FF6B35;--coral-soft:#FF8A5C;
+  --blue:#004E89;--blue-v:#2563EB;
+  --green:#16A34A;--green-s:#22C55E;
+  --amber:#D97706;--amber-s:#F59E0B;
+  --red:#DC2626;--sky:#0284C7;
+  --violet:#7C3AED;--teal:#0D9488;--slate:#64748B;
+  --font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'JetBrains Mono','SF Mono',monospace
+}
+[data-theme="light"]{
+  --bg0:#F5F6FA;--bg1:#FFFFFF;--bg3:#F1F5F9;--bg4:#E2E8F0;
+  --tx1:#1A202C;--tx2:#4A5568;--tx3:#94A3B8;
+  --brd:#E2E8F0;--brd2:#F1F5F9;
+  --shadow:0 1px 3px rgba(0,0,0,0.04),0 1px 2px rgba(0,0,0,0.02);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.06);
+  --chart-grid:rgba(0,0,0,0.06)
+}
+[data-theme="dark"]{
+  --bg0:#0F1117;--bg1:#171923;--bg3:#252839;--bg4:#2D3148;
+  --tx1:#F1F2F4;--tx2:#A0AEC0;--tx3:#5C5F6A;
+  --brd:rgba(255,255,255,0.07);--brd2:rgba(255,255,255,0.04);
+  --shadow:0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.25);
+  --chart-grid:rgba(255,255,255,0.06)
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);background:var(--bg0);color:var(--tx1);min-height:100vh;transition:background 0.3s,color 0.3s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Header */
+.hdr{position:sticky;top:0;z-index:100;padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;background:var(--bg1);border-bottom:1px solid var(--brd);box-shadow:0 1px 3px rgba(0,0,0,0.03)}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.logo{width:38px;height:38px;border-radius:10px;background:#FF6B35;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:800;font-size:17px;color:#fff}
+.hdr h1{font-size:16px;font-weight:800;letter-spacing:-0.03em}.hdr .sub{font-size:10px;color:var(--tx3);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;display:block;margin-top:-1px}
+.hdr-r{display:flex;align-items:center;gap:8px}
+.hbtn{height:36px;padding:0 14px;border-radius:8px;background:var(--bg3);border:1px solid var(--brd);color:var(--tx2);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.25s;display:flex;align-items:center;gap:5px;text-decoration:none}
+.hbtn:hover{background:var(--bg4);color:var(--tx1)}
+.theme-btn{width:36px;height:36px;border-radius:8px;background:var(--bg3);border:1px solid var(--brd);color:var(--tx2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.25s;padding:0}
+.theme-btn:hover{background:var(--bg4);color:var(--tx1)}
+
+/* Layout */
+.main{max-width:1440px;margin:0 auto;padding:24px 28px 50px}
+
+/* Totals row */
+.totals{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:24px;animation:fadeUp 0.3s ease-out}
+.tot{background:var(--bg1);border:1px solid var(--brd);border-radius:12px;padding:18px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:all 0.25s}
+.tot:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.tot::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.tot.t-coral::before{background:var(--coral)}.tot.t-blue::before{background:var(--blue-v)}.tot.t-green::before{background:var(--green)}
+.tot.t-amber::before{background:var(--amber)}.tot.t-violet::before{background:var(--violet)}.tot.t-sky::before{background:var(--sky)}.tot.t-slate::before{background:var(--slate)}
+.tot .tl{font-size:10px;font-weight:800;color:var(--tx3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.tot .tv{font-size:28px;font-weight:800;font-family:var(--mono);line-height:1;color:var(--tx1)}
+.tot .ts{font-size:11px;color:var(--tx3);margin-top:5px;font-weight:500}
+
+/* Chart grid */
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.card{background:var(--bg1);border:1px solid var(--brd);border-radius:12px;padding:20px;box-shadow:var(--shadow);animation:fadeUp 0.3s ease-out both;transition:all 0.25s}
+.card:hover{box-shadow:var(--shadow-md)}
+.card:nth-child(1){animation-delay:0.05s}.card:nth-child(2){animation-delay:0.1s}.card:nth-child(3){animation-delay:0.15s}.card:nth-child(4){animation-delay:0.2s}
+.card.full{grid-column:1/-1}
+.card h2{font-size:14px;font-weight:800;margin-bottom:4px;color:var(--tx1);display:flex;align-items:center;gap:8px}
+.card .desc{font-size:11px;color:var(--tx3);margin-bottom:16px;font-weight:500}
+.chart-wrap{position:relative;height:280px}
+.chart-wrap.sm{height:240px}
+
+/* Cost card */
+.cost-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.cost-item{background:var(--bg3);border:1px solid var(--brd2);border-radius:8px;padding:12px;text-align:center}
+.cost-item .cv{font-size:20px;font-weight:800;font-family:var(--mono);color:var(--coral)}.cost-item .cl{font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:0.06em;margin-top:3px}
+
+/* Loading */
+.load-s{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;gap:16px}
+.spinner{width:40px;height:40px;border:3px solid var(--brd);border-top-color:var(--coral);border-radius:50%;animation:spin 0.8s linear infinite}
+.load-t{color:var(--tx3);font-size:13px;font-weight:600}
+
+/* Footer */
+.ftr{text-align:center;padding:20px;color:var(--tx3);font-size:10px;font-family:var(--mono);font-weight:500;border-top:1px solid var(--brd2)}
+
+/* Compliance Section */
+.comp-divider{margin:32px 0 24px;padding-bottom:8px;border-bottom:2px solid var(--brd);display:flex;align-items:center;gap:10px;animation:fadeUp 0.3s ease-out}
+.comp-divider h2{font-size:18px;font-weight:800;color:var(--tx1);letter-spacing:-0.02em}
+.comp-divider .cd-sub{font-size:11px;color:var(--tx3);font-weight:600}
+.comp-score-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;animation:fadeUp 0.3s ease-out 0.05s both}
+.cs{background:var(--bg1);border:1px solid var(--brd);border-radius:12px;padding:16px 12px;text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:all 0.25s}
+.cs:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.cs::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.cs.cs-pass::before{background:var(--green)}.cs.cs-warn::before{background:var(--amber)}.cs.cs-fail::before{background:var(--red)}.cs.cs-info::before{background:var(--sky)}
+.cs .csv{font-size:26px;font-weight:800;font-family:var(--mono);line-height:1}.cs .csl{font-size:9px;font-weight:800;color:var(--tx3);text-transform:uppercase;letter-spacing:0.06em;margin-top:5px}
+.cs .csv.g{color:var(--green)}.cs .csv.a{color:var(--amber)}.cs .csv.r{color:var(--red)}.cs .csv.s{color:var(--sky)}
+.comp-bar{height:8px;border-radius:4px;background:var(--bg4);margin-top:8px;overflow:hidden}
+.comp-bar-fill{height:100%;border-radius:4px;transition:width 0.6s ease}
+.comp-bar-fill.g{background:var(--green)}.comp-bar-fill.a{background:var(--amber)}.comp-bar-fill.r{background:var(--red)}
+
+@media(max-width:1100px){.totals{grid-template-columns:repeat(4,1fr)}.charts{grid-template-columns:1fr}.comp-score-row{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:768px){.hdr{padding:0 16px;height:54px}.main{padding:16px}.totals{grid-template-columns:repeat(2,1fr)}.chart-wrap{height:220px}.chart-wrap.sm{height:200px}.comp-score-row{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-l"><div class="logo">Q</div><div style="margin-left:2px"><h1>Analytics</h1><span class="sub">QUANTUM Content Factory</span></div></div>
+  <div class="hdr-r">
+    <a class="hbtn" href="/">&#8592; Dashboard</a>
+    <button class="hbtn" onclick="loadAnalytics()">&#8635; Refresh</button>
+    <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">&#9790;</button>
+    <button class="hbtn" onclick="location.href='/logout'">&#9211;</button>
+  </div>
+</header>
+<main class="main" id="app">
+  <div class="load-s" id="loading"><div class="spinner"></div><div class="load-t">Loading analytics...</div></div>
+  <div id="content" style="display:none">
+    <div class="totals" id="totalsRow"></div>
+    <div class="charts">
+      <div class="card full"><h2>&#128200; Production Timeline</h2><div class="desc">Briefs, content pieces, and videos created per day</div><div class="chart-wrap"><canvas id="chartTimeline"></canvas></div></div>
+      <div class="card"><h2>&#127891; Pipeline Funnel</h2><div class="desc">Content status distribution</div><div class="chart-wrap sm"><canvas id="chartFunnel"></canvas></div></div>
+      <div class="card"><h2>&#128176; API Cost Tracker</h2><div class="desc">Estimated spend per day ($0.008/content piece)</div><div class="cost-row" id="costSummary"></div><div class="chart-wrap sm"><canvas id="chartCost"></canvas></div></div>
+      <div class="card"><h2>&#128230; By Module</h2><div class="desc">Content distribution across wellness modules</div><div class="chart-wrap sm"><canvas id="chartModule"></canvas></div></div>
+      <div class="card"><h2>&#128241; By Platform</h2><div class="desc">Content distribution across social platforms</div><div class="chart-wrap sm"><canvas id="chartPlatform"></canvas></div></div>
+    </div>
+
+    <div class="comp-divider"><h2>&#128737; Content Compliance</h2><span class="cd-sub">QA Gate 3 v2 &mdash; 6 hard-coded checks mirrored from production</span></div>
+    <div class="comp-score-row" id="compCards"></div>
+    <div class="charts">
+      <div class="card"><h2>&#128202; CTA Compliance by Funnel</h2><div class="desc">B2C requires &ldquo;Download CorpFit&rdquo; &bull; B2B requires &ldquo;Book a demo&rdquo;</div><div class="chart-wrap sm"><canvas id="chartCtaFunnel"></canvas></div></div>
+      <div class="card"><h2>&#128161; Compliance Checks Breakdown</h2><div class="desc">Pass rate for each of the 6 hard-coded safety checks</div><div class="chart-wrap sm"><canvas id="chartCompChecks"></canvas></div></div>
+    </div>
+
+  </div>
+</main>
+<div class="ftr">QUANTUM Analytics v6.0 &middot; CorpFit &middot; dashboard.corpfit.cloud/analytics</div>
+
+<script>
+var charts={},D=null;
+var COLORS={coral:'#FF6B35',blue:'#2563EB',green:'#16A34A',amber:'#D97706',red:'#DC2626',sky:'#0284C7',violet:'#7C3AED',teal:'#0D9488'};
+
+function getTheme(){try{return localStorage.getItem('qmc-theme')||'light'}catch(e){return'light'}}
+function setTheme(t){document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('qmc-theme',t)}catch(e){};var b=document.getElementById('themeToggle');if(b)b.innerHTML=t==='dark'?'&#9788;':'&#9790;';updateChartColors()}
+function toggleTheme(){setTheme(getTheme()==='dark'?'light':'dark')}
+setTheme(getTheme());
+
+function isDark(){return getTheme()==='dark'}
+function gridColor(){return isDark()?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)'}
+function tickColor(){return isDark()?'#5C5F6A':'#94A3B8'}
+function tooltipBg(){return isDark()?'#252839':'#1A202C'}
+
+function updateChartColors(){
+  if(!charts||!Object.keys(charts).length)return;
+  Object.values(charts).forEach(function(c){
+    if(c.options.scales&&c.options.scales.x){
+      c.options.scales.x.grid.color=gridColor();
+      c.options.scales.x.ticks.color=tickColor();
+    }
+    if(c.options.scales&&c.options.scales.y){
+      c.options.scales.y.grid.color=gridColor();
+      c.options.scales.y.ticks.color=tickColor();
+    }
+    c.update('none');
+  });
+}
+
+function baseScales(){return{
+  x:{grid:{color:gridColor(),drawBorder:false},ticks:{color:tickColor(),font:{family:"'Plus Jakarta Sans'",size:10,weight:'600'}},border:{display:false}},
+  y:{grid:{color:gridColor(),drawBorder:false},ticks:{color:tickColor(),font:{family:"'JetBrains Mono'",size:10}},border:{display:false},beginAtZero:true}
+}}
+function baseTooltip(){return{backgroundColor:tooltipBg(),titleFont:{family:"'Plus Jakarta Sans'",size:12,weight:'700'},bodyFont:{family:"'JetBrains Mono'",size:11},padding:10,cornerRadius:8,displayColors:true,boxPadding:4}}
+
+function renderTotals(t){
+  var items=[
+    {l:'Total Briefs',v:t.total_briefs||0,s:'Pipeline total',c:'t-coral'},
+    {l:'Pending',v:t.pending||0,s:'Awaiting review',c:'t-amber'},
+    {l:'Approved',v:t.approved||0,s:'Ready for video',c:'t-sky'},
+    {l:'Published',v:t.published||0,s:'Live content',c:'t-green'},
+    {l:'Archived',v:t.archived||0,s:'Rejected + killed',c:'t-slate'},
+    {l:'Total Videos',v:t.total_videos||0,s:(t.completed_videos||0)+' completed',c:'t-violet'},
+    {l:'Scheduled',v:t.total_scheduled||0,s:(t.queued_posts||0)+' queued',c:'t-blue'}
+  ];
+  document.getElementById('totalsRow').innerHTML=items.map(function(i){
+    return'<div class="tot '+i.c+'"><div class="tl">'+i.l+'</div><div class="tv">'+i.v+'</div><div class="ts">'+i.s+'</div></div>';
+  }).join('');
+}
+
+function renderTimeline(briefs,content,videos){
+  var allDates={};
+  (briefs||[]).forEach(function(d){allDates[d.date]=allDates[d.date]||{b:0,c:0,v:0};allDates[d.date].b=d.count});
+  (content||[]).forEach(function(d){allDates[d.date]=allDates[d.date]||{b:0,c:0,v:0};allDates[d.date].c=d.count});
+  (videos||[]).forEach(function(d){allDates[d.date]=allDates[d.date]||{b:0,c:0,v:0};allDates[d.date].v=d.count});
+  var sorted=Object.keys(allDates).sort();
+  var labels=sorted.map(function(d){var p=d.split('-');return p[1]+'/'+p[2]});
+
+  if(charts.timeline)charts.timeline.destroy();
+  charts.timeline=new Chart(document.getElementById('chartTimeline'),{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:'Briefs',data:sorted.map(function(d){return allDates[d].b}),borderColor:COLORS.coral,backgroundColor:'rgba(255,107,53,0.08)',borderWidth:2.5,fill:true,tension:0.35,pointRadius:3,pointHoverRadius:6},
+      {label:'Content',data:sorted.map(function(d){return allDates[d].c}),borderColor:COLORS.blue,backgroundColor:'rgba(37,99,235,0.06)',borderWidth:2.5,fill:true,tension:0.35,pointRadius:3,pointHoverRadius:6},
+      {label:'Videos',data:sorted.map(function(d){return allDates[d].v}),borderColor:COLORS.violet,backgroundColor:'rgba(124,58,237,0.06)',borderWidth:2.5,fill:true,tension:0.35,pointRadius:3,pointHoverRadius:6}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{usePointStyle:true,pointStyle:'circle',padding:16,font:{family:"'Plus Jakarta Sans'",size:11,weight:'600'}}},tooltip:baseTooltip()},scales:baseScales()}
+  });
+}
+
+function renderFunnel(data){
+  if(!data||!data.length)return;
+  var statusColors={pending:COLORS.amber,approved:COLORS.sky,published:COLORS.green,rejected:COLORS.red,killed:'#64748B',archived:'#64748B'};
+  var labels=data.map(function(d){return d.status.charAt(0).toUpperCase()+d.status.slice(1)});
+  var values=data.map(function(d){return d.count});
+  var colors=data.map(function(d){return statusColors[d.status]||'#94A3B8'});
+
+  if(charts.funnel)charts.funnel.destroy();
+  charts.funnel=new Chart(document.getElementById('chartFunnel'),{
+    type:'doughnut',
+    data:{labels:labels,datasets:[{data:values,backgroundColor:colors,borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{usePointStyle:true,pointStyle:'circle',padding:14,font:{family:"'Plus Jakarta Sans'",size:11,weight:'600'},color:tickColor()}},tooltip:baseTooltip()}}
+  });
+}
+
+function renderCost(costData,totals){
+  var contentCost=parseFloat(totals.total_content_cost)||0;
+  var qaCost=parseFloat(totals.total_qa_cost)||0;
+  var totalSpend=parseFloat(totals.total_spend)||(contentCost+qaCost);
+  var totalIn=totals.total_input_tokens||0;
+  var totalOut=totals.total_output_tokens||0;
+  document.getElementById('costSummary').innerHTML=
+    '<div class="cost-item"><div class="cv">$'+contentCost.toFixed(3)+'</div><div class="cl">Sonnet (E2)</div></div>'+
+    '<div class="cost-item"><div class="cv">$'+qaCost.toFixed(3)+'</div><div class="cl">Haiku (QA)</div></div>'+
+    '<div class="cost-item"><div class="cv" style="color:var(--blue-v)">$'+totalSpend.toFixed(3)+'</div><div class="cl">Total Spend</div></div>'+
+    (totalIn>0?'<div class="cost-item" style="grid-column:span 3;margin-top:6px"><div style="display:flex;justify-content:center;gap:24px;font-size:11px;color:var(--tx3)"><span>\u{1F4E5} '+totalIn.toLocaleString()+' input tokens</span><span>\u{1F4E4} '+totalOut.toLocaleString()+' output tokens</span><span>\u{1F4CA} '+(totalIn+totalOut).toLocaleString()+' total</span></div></div>':'');
+
+  if(!costData||!costData.length)return;
+  var labels=costData.map(function(d){var p=d.date.split('-');return p[1]+'/'+p[2]});
+  var values=costData.map(function(d){return parseFloat(d.cost)||0});
+
+  if(charts.cost)charts.cost.destroy();
+  charts.cost=new Chart(document.getElementById('chartCost'),{
+    type:'bar',
+    data:{labels:labels,datasets:[{label:'Cost ($)',data:values,backgroundColor:'rgba(255,107,53,0.65)',borderColor:COLORS.coral,borderWidth:1,borderRadius:4,barPercentage:0.7}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:baseTooltip()},scales:baseScales()}
+  });
+}
+
+function renderModule(data){
+  if(!data||!data.length)return;
+  var modColors={steps:COLORS.green,meals:COLORS.coral,workouts:COLORS.violet,checkin:COLORS.sky,'check-in':COLORS.sky,events:COLORS.teal};
+  var labels=data.map(function(d){return(d.module||'unknown').charAt(0).toUpperCase()+(d.module||'unknown').slice(1)});
+  var values=data.map(function(d){return d.count});
+  var colors=data.map(function(d){return modColors[(d.module||'').toLowerCase()]||'#94A3B8'});
+
+  if(charts.module)charts.module.destroy();
+  charts.module=new Chart(document.getElementById('chartModule'),{
+    type:'bar',
+    data:{labels:labels,datasets:[{data:values,backgroundColor:colors,borderWidth:0,borderRadius:6,barPercentage:0.6}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:baseTooltip()},scales:baseScales()}
+  });
+}
+
+function renderPlatform(data){
+  if(!data||!data.length)return;
+  var platColors={tiktok:'#64748B',instagram:'#E1306C',linkedin:'#0A66C2'};
+  var labels=data.map(function(d){return(d.platform||'unknown').charAt(0).toUpperCase()+(d.platform||'unknown').slice(1)});
+  var values=data.map(function(d){return d.count});
+  var colors=data.map(function(d){return platColors[(d.platform||'').toLowerCase()]||'#94A3B8'});
+
+  if(charts.platform)charts.platform.destroy();
+  charts.platform=new Chart(document.getElementById('chartPlatform'),{
+    type:'doughnut',
+    data:{labels:labels,datasets:[{data:values,backgroundColor:colors,borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'right',labels:{usePointStyle:true,pointStyle:'circle',padding:14,font:{family:"'Plus Jakarta Sans'",size:11,weight:'600'},color:tickColor()}},tooltip:baseTooltip()}}
+  });
+}
+
+// ==================
+// COMPLIANCE ENGINE (mirrors QA Gate 3 v2 hard-coded checks)
+// ==================
+function computeCompliance(content){
+  if(!content||!content.length)return null;
+  var checks=[
+    {id:'cta_brand',label:'CorpFit in CTA',desc:'Brand name in call-to-action'},
+    {id:'caption_brand',label:'CorpFit in Caption',desc:'Brand name in caption text'},
+    {id:'no_free',label:'No "free" in CTA',desc:'Paid app — never say free'},
+    {id:'cta_funnel',label:'CTA Matches Funnel',desc:'B2C=Download / B2B=Book demo'},
+    {id:'no_cross',label:'No Cross-Funnel CTA',desc:'B2B≠download, B2C≠book demo'},
+    {id:'no_funfit',label:'No "FunFit"',desc:'Old brand name eliminated'}
+  ];
+  var results={};checks.forEach(function(c){results[c.id]={pass:0,fail:0,total:0}});
+  var b2c={pass:0,fail:0,total:0},b2b={pass:0,fail:0,total:0};
+  content.forEach(function(c){
+    var cta=(c.cta||'').toLowerCase();
+    var capS=(c.caption_short||'').toLowerCase();
+    var capL=(c.caption_long||'').toLowerCase();
+    var script=(c.script||'').toLowerCase();
+    var funnel=(c.funnel||'').toLowerCase();
+    var all=cta+' '+capS+' '+capL+' '+script;
+    // Check 1: CorpFit in CTA
+    var r1=cta.indexOf('corpfit')!==-1;results.cta_brand.total++;if(r1)results.cta_brand.pass++;else results.cta_brand.fail++;
+    // Check 2: CorpFit in caption
+    var r2=capS.indexOf('corpfit')!==-1||capL.indexOf('corpfit')!==-1;results.caption_brand.total++;if(r2)results.caption_brand.pass++;else results.caption_brand.fail++;
+    // Check 3: No "free" in CTA
+    var r3=cta.indexOf('free')===-1;results.no_free.total++;if(r3)results.no_free.pass++;else results.no_free.fail++;
+    // Check 4: CTA matches funnel
+    var r4=false;
+    if(funnel==='b2c'){r4=cta.indexOf('download')!==-1||cta.indexOf('follow')!==-1||cta.indexOf('save')!==-1;b2c.total++;if(r4)b2c.pass++;else b2c.fail++}
+    else if(funnel==='b2b'){r4=cta.indexOf('book')!==-1||cta.indexOf('demo')!==-1||cta.indexOf('connect')!==-1;b2b.total++;if(r4)b2b.pass++;else b2b.fail++}
+    else{r4=true}
+    results.cta_funnel.total++;if(r4)results.cta_funnel.pass++;else results.cta_funnel.fail++;
+    // Check 5: No cross-funnel CTA
+    var r5=true;
+    if(funnel==='b2b'&&cta.indexOf('download')!==-1)r5=false;
+    if(funnel==='b2c'&&(cta.indexOf('book a demo')!==-1||cta.indexOf('book demo')!==-1))r5=false;
+    results.no_cross.total++;if(r5)results.no_cross.pass++;else results.no_cross.fail++;
+    // Check 6: No FunFit
+    var r6=all.indexOf('funfit')===-1;results.no_funfit.total++;if(r6)results.no_funfit.pass++;else results.no_funfit.fail++;
+  });
+  var totalChecks=0,totalPass=0;
+  checks.forEach(function(c){totalChecks+=results[c.id].total;totalPass+=results[c.id].pass});
+  var overallRate=totalChecks>0?Math.round(totalPass/totalChecks*100):0;
+  return{checks:checks,results:results,b2c:b2c,b2b:b2b,overall:overallRate,totalContent:content.length};
+}
+
+function renderComplianceCards(comp){
+  if(!comp){document.getElementById('compCards').innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--tx3);padding:20px;font-size:12px">No content data available for compliance analysis</div>';return}
+  function rateClass(pct){return pct>=90?'g':pct>=70?'a':'r'}
+  function statusClass(pct){return pct>=90?'cs-pass':pct>=70?'cs-warn':'cs-fail'}
+  function barHtml(pct){var c=rateClass(pct);return'<div class="comp-bar"><div class="comp-bar-fill '+c+'" style="width:'+pct+'%"></div></div>'}
+  var cards=[{v:comp.overall+'%',l:'Overall Score',cls:statusClass(comp.overall),vc:rateClass(comp.overall),bar:barHtml(comp.overall)}];
+  comp.checks.forEach(function(c){
+    var r=comp.results[c.id];var pct=r.total>0?Math.round(r.pass/r.total*100):100;
+    cards.push({v:pct+'%',l:c.label,cls:statusClass(pct),vc:rateClass(pct),bar:barHtml(pct),sub:r.pass+'/'+r.total+' pass'})
+  });
+  document.getElementById('compCards').innerHTML=cards.map(function(c){
+    return'<div class="cs '+c.cls+'"><div class="csv '+c.vc+'">'+c.v+'</div><div class="csl">'+c.l+'</div>'+(c.bar||'')+(c.sub?'<div style="font-size:9px;color:var(--tx3);margin-top:4px;font-family:var(--mono)">'+c.sub+'</div>':'')+'</div>'
+  }).join('')
+}
+
+function renderComplianceCharts(comp){
+  if(!comp)return;
+  // CTA Compliance by Funnel
+  var b2cRate=comp.b2c.total>0?Math.round(comp.b2c.pass/comp.b2c.total*100):0;
+  var b2bRate=comp.b2b.total>0?Math.round(comp.b2b.pass/comp.b2b.total*100):0;
+  if(charts.ctaFunnel)charts.ctaFunnel.destroy();
+  charts.ctaFunnel=new Chart(document.getElementById('chartCtaFunnel'),{
+    type:'bar',
+    data:{labels:['B2C (Download CorpFit)','B2B (Book a Demo)'],datasets:[
+      {label:'Compliant',data:[comp.b2c.pass,comp.b2b.pass],backgroundColor:'rgba(22,163,74,0.7)',borderRadius:6,barPercentage:0.5},
+      {label:'Non-Compliant',data:[comp.b2c.fail,comp.b2b.fail],backgroundColor:'rgba(220,38,38,0.5)',borderRadius:6,barPercentage:0.5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{usePointStyle:true,pointStyle:'circle',padding:14,font:{family:"'Plus Jakarta Sans'",size:11,weight:'600'}}},tooltip:baseTooltip(),
+      subtitle:{display:true,text:'B2C: '+b2cRate+'% compliant ('+comp.b2c.pass+'/'+comp.b2c.total+')  |  B2B: '+b2bRate+'% compliant ('+comp.b2b.pass+'/'+comp.b2b.total+')',font:{family:"'JetBrains Mono'",size:10,weight:'500'},color:tickColor(),padding:{bottom:8}}
+    },scales:{...baseScales(),x:{...baseScales().x,stacked:true},y:{...baseScales().y,stacked:true}}}
+  });
+
+  // Compliance Checks Breakdown (horizontal bar)
+  var checkLabels=comp.checks.map(function(c){return c.label});
+  var checkRates=comp.checks.map(function(c){var r=comp.results[c.id];return r.total>0?Math.round(r.pass/r.total*100):100});
+  var checkColors=checkRates.map(function(r){return r>=90?'rgba(22,163,74,0.7)':r>=70?'rgba(217,119,6,0.7)':'rgba(220,38,38,0.7)'});
+  if(charts.compChecks)charts.compChecks.destroy();
+  charts.compChecks=new Chart(document.getElementById('chartCompChecks'),{
+    type:'bar',
+    data:{labels:checkLabels,datasets:[{label:'Pass Rate %',data:checkRates,backgroundColor:checkColors,borderWidth:0,borderRadius:6,barPercentage:0.6}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...baseTooltip(),callbacks:{label:function(ctx){return ctx.raw+'% compliant'}}}},scales:{...baseScales(),x:{...baseScales().x,max:100,ticks:{...baseScales().x.ticks,callback:function(v){return v+'%'}}}}}
+  });
+}
+
+function loadAnalytics(){
+  document.getElementById('loading').style.display='flex';
+  document.getElementById('content').style.display='none';
+  Promise.all([
+    fetch('/webhook/analytics-api').then(function(r){return r.json()}),
+    fetch('/webhook/dashboard-api').then(function(r){return r.json()})
+  ]).then(function(results){
+    var analytics=results[0];
+    var dashboard=results[1];
+    var ds=dashboard.stats||{};
+    D=analytics;
+    var archived=(ds.total_briefs||0)-(ds.pending_briefs||0)-(ds.approved_briefs||0)-(ds.published_briefs||0);
+    if(archived<0)archived=ds.rejected_briefs||0;
+    var totals=analytics.totals||{};
+    totals.pending=ds.pending_briefs||totals.pending||0;
+    totals.approved=ds.approved_briefs||totals.approved||0;
+    totals.published=ds.published_briefs||totals.published||0;
+    totals.archived=archived;
+    totals.total_briefs=ds.total_briefs||totals.total_briefs||0;
+    totals.total_videos=ds.total_videos||totals.total_videos||0;
+    totals.total_content=ds.total_content||totals.total_content||0;
+    var funnel=analytics.funnel||[];
+    var hasArchived=funnel.some(function(f){return f.status==='rejected'||f.status==='killed'||f.status==='archived'});
+    if(!hasArchived&&archived>0)funnel.push({status:'archived',count:archived});
+    var hasPub=funnel.some(function(f){return f.status==='published'});
+    if(!hasPub&&totals.published>0)funnel.push({status:'published',count:totals.published});
+    funnel=funnel.map(function(f){if(f.status==='published'&&f.count===0&&totals.published>0)return{status:'published',count:totals.published};if(f.status==='pending'&&f.count!==totals.pending)return{status:'pending',count:totals.pending};if(f.status==='approved'&&f.count!==totals.approved)return{status:'approved',count:totals.approved};return f});
+    document.getElementById('loading').style.display='none';
+    document.getElementById('content').style.display='block';
+    renderTotals(totals);
+    if(typeof Chart==='undefined'){console.error('Chart.js not loaded');document.querySelectorAll('.chart-wrap').forEach(function(el){el.innerHTML='<div style="color:#DC2626;font-size:12px;padding:20px;text-align:center">Chart.js failed to load. Try refreshing.</div>'});return}
+    try{renderTimeline(analytics.briefs_by_day,analytics.content_by_day,analytics.videos_by_day)}catch(e){console.error('Timeline:',e)}
+    try{renderFunnel(funnel)}catch(e){console.error('Funnel:',e)}
+    try{renderCost(analytics.cost_by_day,totals)}catch(e){console.error('Cost:',e)}
+    try{renderModule(analytics.by_module)}catch(e){console.error('Module:',e)}
+    try{renderPlatform(analytics.by_platform)}catch(e){console.error('Platform:',e)}
+    try{var comp=computeCompliance(dashboard.content||[]);renderComplianceCards(comp);renderComplianceCharts(comp)}catch(e){console.error('Compliance:',e)}
+  }).catch(function(err){
+    document.getElementById('loading').innerHTML='<div style="color:var(--red);font-size:28px">&#9888;</div><div style="font-size:14px;font-weight:600">Failed to load analytics</div><div style="color:var(--tx3);font-size:11px;margin-top:3px">'+err.message+'</div><button class="hbtn" onclick="loadAnalytics()" style="margin-top:12px">&#8635; Retry</button>';
+  });
+}
+loadAnalytics();
+</script>
+</body>
+</html>

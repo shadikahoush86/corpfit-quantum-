@@ -1,0 +1,975 @@
+**QUANTUM**
+
+**AI CONTENT FACTORY**
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Complete System Manual
+
+Backend Operations • Frontend Dashboard • Telegram Bot
+
+**CorpFit --- Circle of Resilient People**
+
+S-H-K Software Solutions
+
+March 2026 • Version 1.0
+
+**TABLE OF CONTENTS**
+
+1\. System Overview
+
+The QUANTUM AI Content Factory is a multi-agent system that autonomously
+discovers wellness trends, generates brand-compliant content, produces
+AI-powered videos, and publishes them to social media platforms. The
+system runs on Docker containers with n8n as the workflow orchestration
+engine, PostgreSQL for data storage, Qdrant for vector search, and
+Cloudflare Workers for the web dashboard.
+
+1.1 Architecture Summary
+
+  --------------- ------------------ ------------------------------------
+  **Agent**       **Role**           **What It Does**
+
+  ELECTRON-1      Trend Scout        Scans RSS feeds, Reddit, PubMed
+                                     daily at 9AM Cairo. Scores 7-15
+                                     wellness trends using Claude Haiku.
+                                     Stores to trend_board.
+
+  QUANTUM         Orchestrator       Reads top trends, checks for
+                                     duplicates, creates 3 content
+                                     briefs. Sends to Telegram for human
+                                     approval.
+
+  ELECTRON-2      Content Writer     Takes approved brief, retrieves
+                                     brand rules from Qdrant, generates
+                                     full content package via Claude
+                                     Sonnet 4. Runs 3 QA gates (Haiku).
+
+  ELECTRON-3      Video Producer     Routes to Kling (B2C cinematic) or
+                                     HeyGen (B2B avatar). Produces video,
+                                     stores in publish_logs.
+
+  ELECTRON-4      Publisher (ORBIT)  Schedules and publishes videos to
+                                     TikTok, Instagram, LinkedIn via
+                                     platform APIs. 3 modes: Manual,
+                                     Semi-Auto, Full Auto.
+  --------------- ------------------ ------------------------------------
+
+1.2 Daily Automated Flow
+
+  ---------- ---------------------- ---------------------------------------
+  **Time**   **Event**              **Details**
+
+  9:00 AM    E1 Trend Scout fires   Cron trigger. Scans 6 sources (3 RSS, 2
+                                    Reddit, 1 PubMed). Scores via Haiku.
+
+  \~9:02 AM  QUANTUM auto-triggered Webhook from E1. Reads trend_board,
+                                    checks dupes against content_briefs.
+
+  \~9:04 AM  3 briefs arrive on     Each with Approve/Reject buttons. Human
+             Telegram               reviews topic, module, platform.
+
+  On Approve E2 generates content   Sonnet 4 creates hooks, script,
+             (\~30s)                captions, CTA. 3 QA gates validate.
+
+  On Approve Content preview on     Full content displayed with
+             Telegram               Publish/Kill buttons.
+
+  On Publish E3 produces video      Kling or HeyGen generates video.
+             (\~2-5 min)            Preview sent to Telegram.
+
+  On ORBIT   E4 publishes to        Manual mode: pick platforms via
+             platforms              Telegram. Semi/Auto: scheduled or
+                                    immediate.
+  ---------- ---------------------- ---------------------------------------
+
+1.3 URLs & Access Points
+
+  -------------------------- --------------------------------------------
+  **Service**                **URL / Access**
+
+  Dashboard                  https://dashboard.corpfit.cloud
+
+  Analytics                  https://dashboard.corpfit.cloud/analytics
+
+  n8n Workflows              https://n8n.corpfit.cloud
+
+  Telegram Bot               \@CorpFitBot (token: 8503417924)
+
+  Tunnel                     corpfit.cloud (UUID: 91611db9, auto-starts
+                             on boot)
+
+  Portainer                  localhost:9000
+
+  PostgreSQL                 localhost:5432 (corpfit / corpfit123 /
+                             corpfit_db)
+
+  Qdrant                     localhost:6333
+  -------------------------- --------------------------------------------
+
+2\. Frontend: Dashboard (Mission Control)
+
+The dashboard is a Cloudflare Worker at dashboard.corpfit.cloud. It
+serves as the visual command center for the entire content factory. The
+Worker proxies all /webhook/\* requests to n8n.corpfit.cloud,
+eliminating CORS issues.
+
+2.1 Dashboard Tabs
+
+  ------------- --------------------- ------------------------------------
+  **Tab**       **Shows**             **Actions Available**
+
+  Content       Pending briefs        Preview (view generated content),
+                awaiting review       Approve, Decline
+
+  Videos        Approved items ready  Preview content, Publish to E3
+                for video             
+
+  Published     Successfully          View content, Watch video
+                published content     
+
+  Errors        System errors with    Review error details, retry info
+                timestamps            
+
+  Archive       Rejected and killed   Preview content, Restore to pending
+                items                 
+
+  ORBIT         Publishing schedule   View queue, platform stats, publish
+                and status            status
+  ------------- --------------------- ------------------------------------
+
+2.2 Action Bar (Top Buttons)
+
+The action bar at the top of the dashboard provides system-level
+commands:
+
+  ------------------ ----------------------------------------------------
+  **Button**         **What It Does**
+
+  Run E1 Scan        Manually triggers ELECTRON-1 to scan for new trends.
+                     Result modal shows completion.
+
+  Run QUANTUM        Manually triggers QUANTUM planner. Creates new
+                     briefs from latest trends.
+
+  Check Stuck        Opens modal listing briefs pending \>24h or approved
+                     \>48h. Shows age for each item.
+
+  System Status      Opens 10-card modal: System Status, Database,
+                     Trends, Total Briefs, Pending Review, Content
+                     Pieces, Videos, QA Pass Rate, Published, Unresolved
+                     Errors.
+
+  Reload Data        Refreshes all dashboard data from the API. Also
+                     auto-refreshes every 60 seconds.
+  ------------------ ----------------------------------------------------
+
+2.3 Content Preview Modal
+
+Clicking Preview on any content item opens a detailed modal with 9
+content sections plus a QA summary bar:
+
+  ------------- -----------------------------------------------------------
+  **Section**   **Content**
+
+  Hooks         3 hook options for the video opening
+
+  Script        Full timed video script
+
+  On-Screen     Text overlays for the video
+  Text          
+
+  Storyboard    Scene-by-scene visual guide
+
+  Short Caption Feed caption for the platform
+
+  Long Caption  Extended caption with hashtags
+
+  CTA           Call to action (Download CorpFit / Book a demo)
+
+  Disclaimer    Health/legal disclaimers if needed
+
+  Self-Check    Agent\'s self-assessment of the content
+  ------------- -----------------------------------------------------------
+
+*The QA bar at the top shows PASS/FAIL status from all 3 gates with
+violation count and fun score.*
+
+2.4 Filters
+
+Every tab has filter dropdowns for Module (Steps, Workouts, Meals,
+Check-in, Events), Platform (TikTok, Instagram, LinkedIn), and Funnel
+(B2C, B2B). A count indicator shows \"Showing X of Y\" items. Use Clear
+Filters to reset.
+
+2.5 Analytics Page
+
+Access at dashboard.corpfit.cloud/analytics. Contains 6 chart sections
+plus a compliance dashboard:
+
+  ------------------ ----------------------------------------------------
+  **Chart**          **What It Shows**
+
+  Production         Daily content output over time (line chart)
+  Timeline           
+
+  Compliance Trend   Dual-axis: daily pass rate % + volume over time
+
+  Cost Tracker       Real API spend per day (Sonnet \$3/\$15 + Haiku
+                     \$1/\$5 per MTok)
+
+  By Module          Content distribution across Steps, Workouts, Meals,
+                     Check-in, Events (horizontal bar)
+
+  By Platform        Content split across TikTok, Instagram, LinkedIn
+                     (doughnut)
+
+  Compliance Section 7 stat cards + 2 charts mirroring QA Gate 3\'s 6
+                     hard-coded checks
+  ------------------ ----------------------------------------------------
+
+2.5.1 Compliance Section
+
+The compliance section provides real-time brand rule enforcement
+visibility:
+
+  ---------------------- ------------------------------------------------
+  **Stat Card**          **What It Measures**
+
+  Overall Compliance     Percentage of content passing all 6 checks
+
+  CorpFit in CTA         \% of CTAs containing the brand name
+
+  CorpFit in Caption     \% of captions containing the brand name
+
+  No \'free\' in CTA     \% of CTAs without the forbidden word
+
+  CTA Matches Funnel     \% where B2C has \'download\' and B2B has
+                         \'demo\'
+
+  No Cross-Funnel CTA    \% without wrong-funnel CTAs (B2C with \'demo\',
+                         etc.)
+
+  No FunFit              \% of content using correct brand name
+  ---------------------- ------------------------------------------------
+
+3\. Frontend: Telegram Bot
+
+The Telegram bot is the primary operator interface for content approval
+and system monitoring. It uses polling (getUpdates) with no public URL
+required.
+
+3.1 Button Actions
+
+  ------------ --------------- ------------------ -------------------------
+  **Button**   **Stage**       **What Happens**   **Next Step**
+
+  Approve      Brief review    Brief status →     Wait \~30s for content
+                               approved. E2       preview
+                               generates content  
+                               automatically.     
+
+  Reject       Brief review    Brief archived.    Done
+                               Nothing generated. 
+
+  Publish      Content review  Status →           Wait \~2-5 min for video
+                               published. E3      
+                               produces video.    
+
+  Kill         Content review  Content archived.  Done
+                               No video produced. 
+  ------------ --------------- ------------------ -------------------------
+
+3.2 ORBIT Platform Buttons
+
+After E3 produces a video, 6 ORBIT buttons appear:
+
+  --------------- --------------- ----------------------------------------
+  **Button**      **Action**      **Effect**
+
+  🎵 TikTok       Queue for       schedule_logs entry with status=queued,
+                  TikTok only     platform=tiktok
+
+  📸 Instagram    Queue for       schedule_logs entry for Instagram
+                  Instagram only  
+
+  💼 LinkedIn     Queue for       schedule_logs entry for LinkedIn
+                  LinkedIn only   
+
+  🚀 All          Queue for all 3 3 schedule_logs entries created
+  Platforms                       simultaneously
+
+  ⏸ Hold          Pause           All platform entries set to status=held
+                  publishing      
+
+  ❌ Cancel       Cancel          All platform entries set to
+                  publishing      status=cancelled
+  --------------- --------------- ----------------------------------------
+
+3.3 Telegram Commands
+
+  ------------------ ----------------------------------------------------
+  **Command**        **What It Does**
+
+  /status            Full system health dashboard: trends count, briefs,
+                     content pieces, videos, errors, last activity
+                     timestamps
+
+  /stale             Lists briefs pending \>24h or approved \>48h with
+                     age indicators
+
+  /backup            Triggers manual database backup. Sends snapshot
+                     report.
+
+  /help              Lists all available commands
+
+  /orbit_status      Shows ORBIT publishing status: queue depth, platform
+                     connection health
+
+  /orbit_queue       Lists all queued items waiting to be published
+
+  /orbit_mode        Shows current mode (manual/semi/auto). Use
+                     /orbit_mode semi to change.
+
+  /orbit             Quick ORBIT dashboard summary
+  ------------------ ----------------------------------------------------
+
++-----------------------------------------------------------------------+
+| **Operator Tip**                                                      |
+|                                                                       |
+| Your daily routine is \~10-15 minutes: check Telegram at \~9:05 AM    |
+| for 3 new briefs, tap Approve on the good ones, review generated      |
+| content, tap Publish. The rest is automated.                          |
++-----------------------------------------------------------------------+
+
+4\. Backend: n8n Workflows
+
+Access n8n at n8n.corpfit.cloud. Login: skahoush2@outlook.com /
+Kahoushshadi1986. There are 16 active workflows:
+
+  -------- ------------------------ -------------- -------------------------------
+  **\#**   **Workflow**             **Trigger**    **Purpose**
+
+  1        E1 Trend Scout v4        Cron (9AM)     Scans 6 sources (RSS, Reddit,
+                                                   PubMed), scores via Haiku,
+                                                   stores in trend_board
+
+  2        QUANTUM Planner v4       Webhook        Reads trends, checks dupes,
+                                                   creates 3 briefs, sends to
+                                                   Telegram
+
+  3        Brief Approval Handler   Schedule (30s) Polls Telegram for callbacks.
+           v13                                     Routes
+                                                   approve/reject/publish/kill + 8
+                                                   commands + ORBIT actions
+
+  4        E2 Content Generator v7  Webhook        RAG pipeline: Qdrant → Sonnet 4
+                                                   → 3 QA gates → PostgreSQL. Cost
+                                                   tracking per piece.
+
+  5        E3 Video Producer v3     Webhook        Routes to Kling (B2C) or HeyGen
+                                                   (B2B). Stores in publish_logs.
+
+  6        E4 Scheduler v2          Schedule       Video quality check + ORBIT
+                                                   scheduling logic
+
+  7        ORBIT Publisher v1       Schedule       Publishes to
+                                    (5m) + Webhook TikTok/Instagram/LinkedIn
+                                                   (simulated until API keys
+                                                   configured)
+
+  8        Dashboard API v1         Webhook GET    Serves all data to dashboard:
+                                                   briefs, content, videos, stats,
+                                                   errors
+
+  9        Dashboard Actions v1     Webhook POST   Handles mutations: approve,
+                                                   reject, publish, kill, e1_scan,
+                                                   quantum_plan, stale_check,
+                                                   health_check
+
+  10       Analytics API v1         Webhook GET    Chart data: production
+                                                   timeline, costs,
+                                                   module/platform breakdowns,
+                                                   compliance
+
+  11       Error Logger v1          Webhook POST   Centralized error logging from
+                                                   all workflows to error_logs
+                                                   table
+
+  12       Health & Stale Check v1  Schedule       /status and /stale Telegram
+                                                   commands
+
+  13       Dedup Check v1           Sub-workflow   Content deduplication for
+                                                   QUANTUM brief creation
+
+  14       System Health Monitor    Schedule       Background service monitoring
+
+  15       Backup Manager v1        Schedule (24h) Daily database snapshot +
+                                                   Telegram report
+
+  16       Watchdog v1              Schedule (10m) Service monitoring, alerts on
+                                                   failures
+  -------- ------------------------ -------------- -------------------------------
+
+4.1 ELECTRON-2 Pipeline (Content Generation)
+
+The E2 pipeline is the most complex workflow. Here is the node-by-node
+flow:
+
+  -------- ---------------------- -------------------------------------------
+  **\#**   **Node**               **What It Does**
+
+  1        Webhook Trigger        Receives brief_id from Approval Handler
+
+  2        Parse Brief            Extracts topic, platform, module, funnel,
+                                  duration from the brief
+
+  3        Qdrant Brand Rules     Retrieves 15 most relevant brand rules from
+                                  corpfit_brand_rules (44 entries)
+
+  4        Qdrant Banned Phrases  Retrieves all 71 banned phrases from
+                                  corpfit_banned_phrases
+
+  5        Assemble Prompt v2     Combines static core (\~1,200 words) +
+                                  dynamic Qdrant rules + brief into
+                                  mega-prompt. Includes dynamic CTA per
+                                  funnel.
+
+  6        Call Claude API        Sends assembled prompt to Claude Sonnet 4
+                                  (claude-sonnet-4-20250514). Max 4096
+                                  tokens. \~\$0.05/piece.
+
+  7        Parse Output           Extracts 9 content sections from
+                                  emoji-delimited response into structured
+                                  fields
+
+  8        Banned Phrase Check    Scans all fields against 71 banned phrases.
+                                  Dual-layer safety net.
+
+  9        QA Gate 1: Health      Claude Haiku checks for medical claims,
+                                  unsafe advice. LENIENT on wellness
+                                  encouragement.
+
+  10       QA Gate 2: Brand       Claude Haiku checks platform tone, brand
+                                  voice, Fun Test (platform-aware). v2
+                                  deployed.
+
+  11       QA Gate 3: Audience    Claude Haiku checks funnel/module/platform
+                                  fit + 6 hard-coded deterministic checks.
+
+  12       Format for Storage     Combines all gate results. Calculates
+                                  qa_decision (APPROVED/BLOCKED), quality
+                                  score, approval token.
+
+  13       Store to content_logs  Inserts complete record into PostgreSQL
+                                  (28+ columns including cost tracking)
+  -------- ---------------------- -------------------------------------------
+
+4.2 QA Gate System
+
+Content passes through 3 sequential AI gates using Claude Haiku 4.5,
+plus 6 hard-coded safety checks:
+
+  ------------- ------------- -------------------------------------------
+  **Gate**      **Model**     **Checks**
+
+  Gate 1:       Haiku 4.5     Medical claims, guaranteed outcomes, unsafe
+  Health Claims               advice, missing disclaimers. LENIENT on
+                              general wellness tips. Has DO NOT FLAG safe
+                              list.
+
+  Gate 2: Brand Haiku 4.5     Platform tone match, brand voice, template
+  & Tone                      completeness, Fun Test. v2: platform-aware
+                              scoring (LinkedIn 3+ OK), lenient template,
+                              DO NOT FAIL safe list.
+
+  Gate 3:       Haiku 4.5     Module alignment, funnel match, platform
+  Audience Fit                fit, CTA validation. PLUS 6 hard-coded
+                              checks (see below).
+  ------------- ------------- -------------------------------------------
+
+4.2.1 Hard-Coded Safety Checks (Gate 3)
+
+These run deterministically after Haiku\'s AI check and cannot be
+bypassed:
+
+  -------- ------------------------------ ------------------------------------
+  **\#**   **Check**                      **Rule**
+
+  1        CorpFit in CTA                 The brand name must appear in the
+                                          call-to-action. Missing = FAIL.
+
+  2        CorpFit in Caption             Brand name must appear in at least
+                                          one caption (short or long). Missing
+                                          = FAIL.
+
+  3        No \'free\' in CTA             CorpFit is a paid app. The word
+                                          \'free\' in any CTA = FAIL.
+
+  4        B2C conversion action          B2C CTA must contain \'download\',
+                                          \'follow\', or \'save this\'.
+                                          Missing = FAIL.
+
+  5        No cross-funnel CTA            B2C with \'book a demo\' = FAIL. B2B
+                                          with \'download\' = FAIL.
+
+  6        No FunFit anywhere             Old brand name \'FunFit\' in any
+                                          field = FAIL.
+  -------- ------------------------------ ------------------------------------
+
++-----------------------------------------------------------------------+
+| **QA Gate Behavior on API Failure**                                   |
+|                                                                       |
+| If Claude Haiku is down or returns an error, the gate auto-passes the |
+| content, logs the failure to error_logs, and flags it for human       |
+| review. This prevents infrastructure issues from blocking the entire  |
+| pipeline.                                                             |
++-----------------------------------------------------------------------+
+
+5\. Backend: Database (PostgreSQL)
+
+Connection: host=localhost:5432 (Docker: postgres container),
+database=corpfit_db, user=corpfit, password=corpfit123.
+
+5.1 Core Tables
+
+  ---------------- ------------------ ---------------------------------------
+  **Table**        **Records**        **Purpose**
+
+  trend_board      260+               Discovered trends from E1 with scores,
+                                      safety labels, and module mapping
+
+  content_briefs   130+               QUANTUM-generated briefs with topic,
+                                      module, platform, funnel, status,
+                                      trend_score
+
+  content_logs     115+               E2-generated content: scripts, hooks,
+                                      captions, CTA, QA results, cost
+                                      tracking (28+ columns)
+
+  publish_logs     9+                 E3 video production records: tool used,
+                                      resolution, video URL, status
+
+  schedule_logs    3+                 E4/ORBIT scheduling: platform, status
+                                      (queued/publishing/published/failed),
+                                      post URLs
+
+  error_logs       20+                Centralized errors from all workflows
+                                      with retry counts and resolution status
+
+  system_config    7+                 Runtime config: orbit_mode, platform
+                                      tokens (PENDING_SETUP), enabled
+                                      platforms
+
+  api_costs        100+               Per-API-call cost tracking: node name,
+                                      model, input/output tokens, cost
+  ---------------- ------------------ ---------------------------------------
+
+5.2 Key content_logs Columns
+
+The content_logs table is the most important table with 28+ columns:
+
+  ------------------ ----------- ----------------------------------------
+  **Column**         **Type**    **Purpose**
+
+  id                 SERIAL PK   Auto-incrementing primary key
+
+  module             VARCHAR     steps, workouts, meals, checkin, events
+
+  platform           VARCHAR     tiktok, instagram, linkedin, youtube
+
+  funnel             VARCHAR     b2c or b2b
+
+  topic              TEXT        The content topic
+
+  hooks / script /   TEXT        Generated creative content
+  storyboard                     
+
+  caption_short /    TEXT        Platform captions with hashtags
+  caption_long                   
+
+  cta                TEXT        Call to action (Download CorpFit / Book
+                                 a demo)
+
+  qa_passed          BOOLEAN     true = APPROVED, false = BLOCKED
+
+  qa_violations      JSONB       Detailed violation objects from all 3
+                                 gates
+
+  approval_token     VARCHAR     PKT-YYYY-MM-DD-NNN format
+
+  input_tokens /     INTEGER     Real token counts from API calls
+  output_tokens                  
+
+  e2_cost / qa_cost  NUMERIC     Real dollar costs per piece
+  / total_cost                   
+
+  pipeline_version   VARCHAR     Currently v7
+  ------------------ ----------- ----------------------------------------
+
+5.3 Content Lifecycle Statuses
+
+  ------------------ ----------------------------------------------------
+  **Status**         **Meaning**
+
+  pending            Brief created by QUANTUM, waiting for human approval
+                     on Telegram
+
+  approved           Human tapped Approve. E2 generated content. Waiting
+                     for Publish decision.
+
+  published          Human tapped Publish. E3 produces video. Content is
+                     live.
+
+  rejected           Human tapped Reject. Brief archived. No content
+                     generated.
+
+  killed             Human tapped Kill after reviewing content. Content
+                     archived.
+
+  blocked            QA gates blocked the content (violations found).
+                     Needs re-generation or manual review.
+  ------------------ ----------------------------------------------------
+
+6\. Backend: Qdrant Vector Database
+
+Qdrant runs at localhost:6333 (Docker: qdrant container). It stores
+brand rules and banned phrases as vector embeddings using
+nomic-embed-text via Ollama.
+
+  ------------------------ ------------- ------------------------------------
+  **Collection**           **Entries**   **Purpose**
+
+  corpfit_brand_rules      44            Brand voice rules, tone guidelines,
+                                         content principles. Top 15 most
+                                         relevant are injected into each E2
+                                         prompt.
+
+  corpfit_banned_phrases   71            Forbidden phrases that must never
+                                         appear in content. All 71 are loaded
+                                         for every piece. Dual-layer check:
+                                         prompt instruction + post-generation
+                                         scan.
+  ------------------------ ------------- ------------------------------------
+
+The hybrid RAG approach means each content piece gets a tailored prompt:
+the static core (\~1,200 words defining the agent\'s behavior) plus
+dynamically retrieved brand rules that are most relevant to the specific
+topic, module, and platform combination.
+
+7\. Backend: Docker Infrastructure
+
+The entire system runs in Docker containers with auto-restart. Container
+names are used for inter-service communication (not localhost).
+
+  ------------------ ---------- -------------------- ---------------------------------
+  **Container**      **Port**   **Image**            **Notes**
+
+  n8n                5678       n8n (custom)         Workflow engine. All 16
+                                                     workflows. Hardened Alpine (no
+                                                     apt/apk).
+
+  postgres           5432       PostgreSQL           Primary database. 8 tables.
+                                                     Credentials:
+                                                     corpfit/corpfit123/corpfit_db
+
+  qdrant             6333       Qdrant               Vector DB. 2 collections (44
+                                                     brand rules + 71 banned phrases)
+
+  open-webui         3000       Open WebUI           Optional AI chat interface
+
+  portainer          9000       Portainer            Docker management GUI. Monitor
+                                                     container health.
+
+  ffmpeg             N/A        linuxserver/ffmpeg   Sidecar for E3 video
+                                                     post-processing (resize,
+                                                     watermark, compress)
+  ------------------ ---------- -------------------- ---------------------------------
+
+7.1 Cloudflare Tunnel
+
+A named Cloudflare Tunnel (UUID: 91611db9) provides permanent remote
+access. It auto-starts on Windows boot via Task Scheduler. Domain:
+corpfit.cloud with two routes: n8n.corpfit.cloud (n8n backend) and
+dashboard.corpfit.cloud (Cloudflare Worker dashboard).
+
+8\. ORBIT Publishing System
+
+ORBIT (Outreach, Reporting, Benchmarks & Insights Tracker) is
+ELECTRON-4, completing the content lifecycle from video production to
+social media post.
+
+8.1 Three Scheduling Modes
+
+  ----------- ---------------------- ------------------------------------
+  **Mode**    **Behavior**           **Best For**
+
+  Manual      Every post requires    Launch phase. Building trust in the
+              Telegram tap. Operator system.
+              picks platforms.       
+
+  Semi-Auto   Telegram preview sent. Comfortable phase. Trust with safety
+              If no Hold within 30   net.
+              min, auto-posts.       
+
+  Full Auto   E3 finishes → E4 posts Mature phase. Full autonomous
+              immediately.           pipeline.
+              Confirmation only.     
+  ----------- ---------------------- ------------------------------------
+
+*Default mode: Manual. Change via /orbit_mode semi or /orbit_mode auto
+in Telegram.*
+
+8.2 Platform API Integration
+
+  -------------- ------------------ ------------------ --------------------------
+  **Platform**   **API**            **Status**         **Config Key**
+
+  TikTok         Content Posting    PENDING_SETUP      tiktok_access_token
+                 API v2                                
+
+  Instagram      Facebook Graph API PENDING_SETUP      instagram_access_token +
+                 (Reels)                               instagram_user_id
+
+  LinkedIn       UGC Post API       PENDING_SETUP      linkedin_access_token +
+                                                       linkedin_org_id
+  -------------- ------------------ ------------------ --------------------------
+
+All credential placeholders are in the system_config table. The ORBIT
+Publisher workflow currently uses simulated API calls. Swap in real
+credentials when platform developer accounts are registered.
+
+8.3 Publishing Pipeline
+
+1.  E3 produces video → publish_logs.status = \'ready_to_post\'
+
+2.  E4 Scheduler detects new video, checks ORBIT mode
+
+3.  Manual: Telegram message with 6 platform buttons sent to operator
+
+4.  Operator taps platform button (e.g., 🚀 All Platforms)
+
+5.  ORBIT Publisher picks up queued items, calls platform APIs
+
+6.  Status updates: queued → publishing → published (or failed with
+    retry)
+
+7.  Telegram confirmation sent with post URL
+
+8.  Dashboard ORBIT tab and Published tab updated
+
+9\. Content & Brand Rules
+
+9.1 Five Content Modules
+
+  ------------- ---------------------------------------------------------
+  **Module**    **Covers**
+
+  Steps         Daily walking, movement, 10K goals, step challenges
+
+  Workouts      Exercise routines, stretches, HIIT, yoga, strength
+                training
+
+  Meals         Nutrition, recipes, meal prep, hydration, healthy eating
+
+  Check-in      Mental wellness, habits, mindfulness, sleep, daily
+                reflection
+
+  Events        Corporate wellness events, team challenges, company
+                programs
+  ------------- ---------------------------------------------------------
+
+9.2 Two Funnels
+
+  ------------ ---------------------- ------------------ --------------------
+  **Funnel**   **Audience**           **Tone**           **CTA**
+
+  B2C          Individual consumers   Fun, personal,     Download CorpFit
+                                      relatable, casual  
+
+  B2B          Corporate HR /         Professional,      Book a demo
+               wellness managers      ROI-focused,       
+                                      data-backed        
+  ------------ ---------------------- ------------------ --------------------
+
+9.3 Platform Tones
+
+  -------------- -----------------------------------------------------------
+  **Platform**   **Tone Requirements**
+
+  TikTok         Fun, energetic, trendy, casual, Gen-Z friendly. 15-60s
+                 vertical video. Emojis OK.
+
+  Instagram      Inspiring, polished, aspirational, warm. Visual-first.
+                 Moderate emojis.
+
+  LinkedIn       Professional, data-driven, authoritative but approachable.
+                 NO emojis in captions. NO slang. NO \'POV:\'.
+
+  YouTube        Educational, friendly expert, in-depth, tutorial-style.
+  -------------- -----------------------------------------------------------
+
+9.4 Mandatory Brand Rules
+
+-   **Brand name:** Always \"CorpFit\" (Circle of Resilient People).
+    NEVER \"FunFit\" (old name).
+
+-   **CTA rule:** Never use the word \"free\". CorpFit is a paid app
+    with no free tier.
+
+-   **B2C CTA:** Must include \"Download CorpFit\", \"Follow
+    \@CorpFit\", or \"Save this\".
+
+-   **B2B CTA:** Must include \"Book a demo\", \"Connect with CorpFit\",
+    or \"Let\'s discuss\".
+
+-   **Cross-funnel:** B2C cannot say \"Book a demo\". B2B cannot say
+    \"Download\".
+
+-   **Core mission:** \"Making health, losing weight, losing fat is
+    FUN.\" Every piece must pass: Will people have fun doing this?
+
+10\. Video Production (E3)
+
+10.1 Two-Tool Strategy
+
+  ------------- ------------- ----------- ----------- --------------------
+  **Tool**      **Use Case**  **Cost**    **Monthly   **Style**
+                                          Cap**       
+
+  Kling 2.6     B2C cinematic \$37/mo     \~60 videos Motion-heavy,
+  (fal.ai)                                            trendy, visual
+                                                      storytelling
+
+  HeyGen        B2B avatar    \$29/mo     \~12 videos Professional
+                                                      presenter, talking
+                                                      head, data overlays
+  ------------- ------------- ----------- ----------- --------------------
+
+*Both subscriptions are PENDING purchase. E3 currently stores
+placeholder records. FFmpeg 8.0.1 is ready as a sidecar container for
+post-processing.*
+
+11\. Cost Breakdown
+
+11.1 AI API Costs
+
+  ---------------------- --------------- ---------------------------------
+  **Service**            **Pricing**     **Usage**
+
+  Claude Sonnet 4 (E2    \$3 / \$15 per  \~\$0.052 per content piece
+  content)               MTok (in/out)   
+
+  Claude Haiku 4.5 (QA   \$1 / \$5 per   \~\$0.011 per content piece (3
+  gates x3)              MTok (in/out)   gates)
+
+  Claude Haiku (E1       \$1 / \$5 per   \~\$0.002 per daily scan
+  scoring)               MTok            
+
+  Total per piece                        \~\$0.063 average
+
+  Monthly (72 pieces)                    \~\$4.50/month AI costs
+  ---------------------- --------------- ---------------------------------
+
+11.2 Video & Infrastructure Costs
+
+  ---------------------- --------------- ---------------------------------
+  **Service**            **Cost**        **Notes**
+
+  Kling 2.6 (fal.ai)     \$37/month      B2C cinematic videos (\~60/month)
+
+  HeyGen                 \$29/month      B2B avatar videos (\~12/month)
+
+  Cloudflare (tunnel +   \$0             Free tier covers dashboard +
+  worker)                                tunnel
+
+  Platform APIs          \$0             All publishing APIs are free
+  (TikTok/IG/LI)                         
+
+  Docker hosting         Local PC        Runs on developer machine, no
+                                         cloud fees
+
+  Total monthly          \~\$70.50       AI (\$4.50) + Video (\$66) +
+                                         Infrastructure (\$0)
+  ---------------------- --------------- ---------------------------------
+
+12\. Troubleshooting
+
+  ---------------------- ------------------------------------------------
+  **Problem**            **Solution**
+
+  Dashboard shows        Check if tunnel is running: open
+  loading screen         n8n.corpfit.cloud. If down, restart cloudflared
+                         from Task Scheduler.
+
+  No briefs arriving on  Check E1 cron schedule in n8n. Verify RSS feeds
+  Telegram               are still working. Run E1 manually via
+                         dashboard.
+
+  Content stuck in       Use /stale command in Telegram. Check if
+  \'pending\'            Approval Handler v13 is active in n8n.
+
+  QA gate blocking       Check error_logs for API failures. Gate
+  everything             auto-passes on failure. If Haiku is down,
+                         content flows through.
+
+  \'429 Too Many         Anthropic rate limiting. Built-in retry logic (2
+  Requests\' errors      attempts, 3s delay). If persistent, add delay
+                         between briefs.
+
+  Docker containers down Open Portainer (localhost:9000). Restart failed
+                         containers. Check docker ps.
+
+  Tunnel offline         Open Task Scheduler, find corpfit-tunnel task,
+                         run it. Or: cloudflared tunnel run corpfit-n8n
+
+  Dashboard buttons not  Hard refresh (Ctrl+Shift+R). Check browser
+  working                console for JS errors. Verify worker deployed.
+
+  Videos not generating  E3 needs Kling/HeyGen subscriptions. Check
+                         publish_logs for error messages.
+
+  ORBIT not publishing   Check system_config for PENDING_SETUP tokens.
+                         Real API credentials needed.
+  ---------------------- ------------------------------------------------
+
+13\. Credentials Reference
+
++-----------------------------------------------------------------------+
+| **Security Note**                                                     |
+|                                                                       |
+| These credentials are for internal team use only. Never share outside |
+| the CorpFit team. API keys should be rotated periodically.            |
++-----------------------------------------------------------------------+
+
+  ---------------------- --------------------------------------------------
+  **Service**            **Credentials**
+
+  n8n Login              skahoush2@outlook.com / Kahoushshadi1986
+
+  PostgreSQL             user=corpfit, pass=corpfit123, db=corpfit_db,
+                         host=localhost:5432
+
+  Anthropic API          sk-ant-api03-kvKV4OFPzLq\... (in all workflow Code
+                         nodes)
+
+  Telegram Bot           Token: 8503417924:AAFUM\... \| Chat ID: 8484541577
+
+  Cloudflare Account     ID: 2aed032eb4d82bdc73c9a2a5195c9c58
+
+  Cloudflare Wrangler    Token: xrAne5nTXBxFvZW5_PBicLLznoGOFnnBAZW03Bm9
+
+  fal.ai (Kling)         909a576d-a23f-492d-ad36-67ea55507c89:19ae04d\...
+
+  TikTok API             PENDING_SETUP (in system_config)
+
+  Instagram API          PENDING_SETUP (in system_config)
+
+  LinkedIn API           PENDING_SETUP (in system_config)
+  ---------------------- --------------------------------------------------
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CORPFIT QUANTUM AI Content Factory • System Manual v1.0 • March 2026
+
+S-H-K Software Solutions • QUANTUM System Architect

@@ -1,0 +1,891 @@
++-----------------------------------------------------------------------+
+| **CORPFIT**                                                           |
+|                                                                       |
+| QUANTUM AI Content Factory                                            |
+|                                                                       |
+| *Circle of Resilient People*                                          |
++-----------------------------------------------------------------------+
+
+**ELECTRON-4 / ORBIT**
+
+Outreach, Reporting, Benchmarks & Insights Tracker
+
+Auto-Scheduling & Social Publishing Agent
+
+  ------------------------------- ---------------------------------------
+  Version:                        1.0
+
+  Date:                           February 26, 2026
+
+  Phase:                          Post Day-21 (Phase 2)
+
+  Status:                         **PLANNING**
+
+  Author:                         S-H-K Software Solutions
+  ------------------------------- ---------------------------------------
+
+S-H-K Software Solutions
+
+**1. Executive Summary**
+
++-----------------------------------------------------------------------+
+| **ELECTRON-4 / ORBIT Mission**                                        |
+|                                                                       |
+| Automatically publish approved video content to TikTok, Instagram,    |
+| and LinkedIn                                                          |
+|                                                                       |
+| with full operator control, 3-mode scheduling (Manual / Semi-Auto /   |
+| Full Auto),                                                           |
+|                                                                       |
+| and real-time Telegram notifications for every launch.                |
+|                                                                       |
+| Making health, losing weight, losing fat is FUN --- launched into     |
+| orbit.                                                                |
++-----------------------------------------------------------------------+
+
+ELECTRON-4, codenamed ORBIT (Outreach, Reporting, Benchmarks & Insights
+Tracker), is the fourth and final agent in the QUANTUM AI Content
+Factory pipeline. While ELECTRON-3 produces finished video assets, ORBIT
+takes those videos and distributes them across social media platforms on
+a controlled schedule.
+
+ORBIT completes the content lifecycle: E1 discovers trends, QUANTUM
+plans briefs, E2 writes content, E3 produces videos, and E4 publishes
+them to the world. With ORBIT, CorpFit achieves a fully autonomous
+content pipeline from trend discovery to social media post.
+
+**1.1 Current Pipeline Status**
+
+  ---------------- --------------- --------------------- -----------------
+  **Agent**        **Status**      **Output**            **Feeds Into**
+
+  **ELECTRON-1**   ✅ Production   Trend Board (7-15     QUANTUM
+                                   trends)               
+
+  **QUANTUM**      ✅ Production   Content Briefs +      ELECTRON-2
+                                   Approval              
+
+  **ELECTRON-2**   ✅ Production   Scripts, Captions, QA ELECTRON-3
+
+  **ELECTRON-3**   ✅ Production   Videos, Thumbnails    ELECTRON-4
+
+  **ELECTRON-4**   **🚀 Planning** Published Posts +     Dashboard / App
+                                   Analytics             
+  ---------------- --------------- --------------------- -----------------
+
+**1.2 Value Proposition**
+
+-   **Zero-touch publishing:** Videos go from production to live posts
+    without manual uploading to each platform.
+
+-   **Mission Control:** Three scheduling modes (Manual, Semi-Auto, Full
+    Auto) give operators complete control over what goes live.
+
+-   **Multi-platform:** Single video asset automatically formatted and
+    posted to TikTok, Instagram Reels, and LinkedIn.
+
+-   **Audit trail:** Every publish action logged with timestamps,
+    platform post IDs, and status tracking.
+
+-   **Client-ready:** Adds massive value to CorpFit\'s service offering
+    --- clients get content created AND published.
+
+**2. System Architecture**
+
+**2.1 High-Level Flow**
+
++-----------------------------------------------------------------------+
+| **ORBIT Pipeline Flow**                                               |
+|                                                                       |
+| E3 produces video → publish_logs.status = \'ready_to_post\'           |
+|                                                                       |
+| ↓                                                                     |
+|                                                                       |
+| ORBIT detects new ready video                                         |
+|                                                                       |
+| ↓                                                                     |
+|                                                                       |
+| Mode Check: Manual / Semi-Auto / Full Auto                            |
+|                                                                       |
+| ↓                                                                     |
+|                                                                       |
+| \[Manual\] Telegram: \"🚀 Ready for Orbit!\" + platform buttons       |
+|                                                                       |
+| \[Semi-Auto\] Telegram preview + 30-min auto-launch timer             |
+|                                                                       |
+| \[Full Auto\] Immediate platform routing                              |
+|                                                                       |
+| ↓                                                                     |
+|                                                                       |
+| Platform Router → TikTok API / Instagram Graph API / LinkedIn Posts   |
+| API                                                                   |
+|                                                                       |
+| ↓                                                                     |
+|                                                                       |
+| Post created → schedule_logs entry with post_id + URL                 |
+|                                                                       |
+| ↓                                                                     |
+|                                                                       |
+| Telegram confirmation: \"✅ Posted to TikTok: \[link\]\"              |
+|                                                                       |
+| ↓                                                                     |
+|                                                                       |
+| Dashboard: Published tab updated with live links                      |
++-----------------------------------------------------------------------+
+
+**2.2 Three Scheduling Modes**
+
+  --------------- ------------ ------------------------ -----------------------
+  **Mode**        **Icon**     **Behavior**             **Best For**
+
+  **Manual**      🔴           Every post requires      Launch phase. Building
+                               Telegram tap. Operator   trust in the system.
+                               picks which platform(s). 
+
+  **Semi-Auto**   🟡           Telegram preview sent.   Comfortable phase.
+                               If no Hold within 30     Trust with safety net.
+                               min, auto-posts to all   
+                               platforms.               
+
+  **Full Auto**   🟢           E3 finishes → E4 posts   Mature phase. Full
+                               immediately. Telegram    autonomous pipeline.
+                               confirmation only.       
+  --------------- ------------ ------------------------ -----------------------
+
+The mode is stored in a system_config table and can be changed via
+Telegram command (/orbit_mode manual\|semi\|auto) or the Dashboard
+settings. Default mode at launch: Manual.
+
+**2.3 Component Architecture**
+
+  ------------------ ---------------------- ------------------------------
+  **Component**      **Technology**         **Purpose**
+
+  **E4 Scheduler**   n8n Workflow           Detects ready videos, applies
+                                            mode logic, routes to
+                                            platforms
+
+  **Platform         n8n Code Node          Formats payload per platform
+  Router**                                  API requirements
+
+  **TikTok           TikTok Content Posting Uploads video via
+  Publisher**        API                    PULL_FROM_URL or FILE_UPLOAD
+
+  **Instagram        Instagram Graph API    Creates Reel container, polls
+  Publisher**        (Meta)                 status, publishes
+
+  **LinkedIn         LinkedIn Posts +       Initializes upload, transfers
+  Publisher**        Videos API             video, creates post
+
+  **Telegram         Telegram Bot API       Sends previews, receives
+  Controller**                              platform selections, confirms
+                                            posts
+
+  **schedule_logs    PostgreSQL             Tracks every publish attempt
+  DB**                                      with status, post IDs, URLs
+
+  **Dashboard Tab**  Cloudflare Worker      New \'Orbit\' tab showing
+                                            scheduled/posted/failed
+                                            content
+  ------------------ ---------------------- ------------------------------
+
+**3. Platform API Details**
+
+**3.1 TikTok Content Posting API**
+
+  ---------------------- ------------------------------------------------
+  **Property**           **Details**
+
+  Base URL               https://open.tiktokapis.com/v2/post/publish/
+
+  Auth                   OAuth 2.0 Bearer Token (access_token per user)
+
+  Upload Method          PULL_FROM_URL (preferred --- video already
+                         hosted) or FILE_UPLOAD
+
+  Scopes Required        video.publish, video.upload
+
+  Rate Limit             30 requests/minute per user token
+
+  Video Specs            MP4/MOV, H.264, AAC audio, 23-60 FPS, 9:16
+                         aspect ratio
+
+  Audit Requirement      Unaudited apps post in private mode. Must pass
+                         TikTok audit for public.
+
+  Domain Verification    Required for PULL_FROM_URL --- verify
+                         corpfit.cloud in TT4D app
+  ---------------------- ------------------------------------------------
+
+**3.1.1 TikTok Publish Flow**
+
+1.  POST /v2/post/publish/video/init/ with video_url and post_info
+    (title, privacy, interaction settings)
+
+2.  Receive publish_id from response
+
+3.  Poll POST /v2/post/publish/status/fetch/ with publish_id until
+    status = PUBLISH_COMPLETE
+
+4.  Extract publicaly_available_post_id from response
+
+5.  Store post_id and construct public URL in schedule_logs
+
+**3.2 Instagram Graph API (Reels)**
+
+  ---------------------- ------------------------------------------------
+  **Property**           **Details**
+
+  Base URL               https://graph.facebook.com/v21.0/{ig-user-id}/
+
+  Auth                   OAuth 2.0 via Facebook Login (long-lived page
+                         token)
+
+  Method                 2-step: Create container (POST /media) → Publish
+                         (POST /media_publish)
+
+  Scopes Required        instagram_basic, instagram_content_publish,
+                         pages_read_engagement
+
+  Account Type           Instagram Business or Creator account linked to
+                         Facebook Page
+
+  Video Specs            MP4/MOV, H.264, AAC, 9:16 aspect ratio, 5-90
+                         seconds
+
+  Processing             Container status polling required (FINISHED →
+                         publish)
+
+  Insights Available     GET /{ig-media-id}/insights --- reach, plays,
+                         likes, saves, shares
+  ---------------------- ------------------------------------------------
+
+**3.2.1 Instagram Publish Flow**
+
+1.  POST /{ig-user-id}/media with media_type=REELS, video_url, caption,
+    share_to_feed=true
+
+2.  Receive container_id (creation_id)
+
+3.  Poll GET /{container_id}?fields=status_code until status = FINISHED
+
+4.  POST /{ig-user-id}/media_publish with creation_id
+
+5.  Receive media_id, construct permalink, store in schedule_logs
+
+**3.3 LinkedIn Posts + Videos API**
+
+  ---------------------- ------------------------------------------------
+  **Property**           **Details**
+
+  Base URL               https://api.linkedin.com/rest/
+
+  Auth                   OAuth 2.0 Bearer Token + Linkedin-Version header
+                         (YYYYMM)
+
+  Method                 3-step: Initialize upload → PUT video binary →
+                         Create post
+
+  Scopes Required        w_member_social (personal) or
+                         w_organization_social (company page)
+
+  Partner Program        Full Marketing API requires partner approval.
+                         Basic posting works without.
+
+  Video Specs            MP4, H.264, AAC, up to 10 minutes, max 5GB
+
+  Analytics              Video Analytics API: views, time watched,
+                         engagement (6-month window)
+  ---------------------- ------------------------------------------------
+
+**3.3.1 LinkedIn Publish Flow**
+
+1.  POST /rest/videos?action=initializeUpload with owner URN and file
+    size
+
+2.  Receive uploadUrl and video URN from response
+
+3.  PUT video binary to uploadUrl
+
+4.  POST /rest/videos?action=finalizeUpload with video URN
+
+5.  POST /rest/posts with video URN, commentary text, and visibility
+    settings
+
+6.  Receive post URN, store in schedule_logs
+
+**4. Database Design**
+
+**4.1 New Tables**
+
+**4.1.1 schedule_logs**
+
+Tracks every publish attempt across all platforms. One row per platform
+per video.
+
+  ----------------------- ------------- -------------- ------------------------------
+  **Column**              **Type**      **Nullable**   **Description**
+
+  **id**                  SERIAL PK     No             Auto-increment primary key
+
+  **publish_log_id**      INTEGER FK    No             References publish_logs.id
+                                                       (the video)
+
+  **content_log_id**      INTEGER FK    No             References content_logs.id
+                                                       (the content)
+
+  **brief_id**            INTEGER FK    No             References briefs.id (original
+                                                       brief)
+
+  **platform**            VARCHAR(20)   No             tiktok \| instagram \|
+                                                       linkedin
+
+  **status**              VARCHAR(30)   No             queued \| uploading \|
+                                                       processing \| live \| failed
+                                                       \| held
+
+  **platform_post_id**    TEXT          Yes            Native post ID from platform
+                                                       API response
+
+  **platform_post_url**   TEXT          Yes            Public URL of the live post
+
+  **caption**             TEXT          Yes            Caption/description sent with
+                                                       the post
+
+  **hashtags**            TEXT          Yes            Hashtags included (JSON array)
+
+  **scheduled_at**        TIMESTAMPTZ   Yes            When the post is/was scheduled
+                                                       for
+
+  **posted_at**           TIMESTAMPTZ   Yes            When the post actually went
+                                                       live
+
+  **error_message**       TEXT          Yes            Error details if status =
+                                                       failed
+
+  **retry_count**         INTEGER       No             Number of retry attempts
+                                                       (default 0, max 3)
+
+  **mode_used**           VARCHAR(10)   No             manual \| semi \| auto (which
+                                                       mode triggered this)
+
+  **operator_id**         TEXT          Yes            Telegram user ID of operator
+                                                       who approved (manual mode)
+
+  **created_at**          TIMESTAMPTZ   No             Row creation timestamp
+                                                       (DEFAULT NOW())
+
+  **updated_at**          TIMESTAMPTZ   No             Last update timestamp
+  ----------------------- ------------- -------------- ------------------------------
+
+**4.1.2 platform_accounts**
+
+Stores OAuth credentials for each connected social platform account.
+
+  ---------------------- -------------- -------------- ------------------------------
+  **Column**             **Type**       **Nullable**   **Description**
+
+  **id**                 SERIAL PK      No             Auto-increment primary key
+
+  **platform**           VARCHAR(20)    No             tiktok \| instagram \|
+                                                       linkedin
+
+  **account_name**       VARCHAR(100)   No             Display name (e.g.,
+                                                       \@corpfit_official)
+
+  **account_id**         TEXT           No             Platform-specific account/user
+                                                       ID
+
+  **access_token**       TEXT           No             OAuth access token (encrypted
+                                                       at rest)
+
+  **refresh_token**      TEXT           Yes            OAuth refresh token for token
+                                                       rotation
+
+  **token_expires_at**   TIMESTAMPTZ    Yes            When the access token expires
+
+  **is_active**          BOOLEAN        No             Whether this account is
+                                                       enabled for posting (DEFAULT
+                                                       true)
+
+  **metadata**           JSONB          Yes            Platform-specific data
+                                                       (page_id, ig_user_id, org_urn,
+                                                       etc.)
+
+  **created_at**         TIMESTAMPTZ    No             Row creation timestamp
+  ---------------------- -------------- -------------- ------------------------------
+
+**4.1.3 system_config**
+
+Key-value store for system-wide settings including ORBIT scheduling
+mode.
+
+  ---------------- ------------- -------------- ------------------------------
+  **Column**       **Type**      **Nullable**   **Description**
+
+  **key**          VARCHAR(50)   No             Setting name (e.g.,
+                   PK                           orbit_mode)
+
+  **value**        TEXT          No             Setting value (e.g., manual)
+
+  **updated_at**   TIMESTAMPTZ   No             Last modified timestamp
+  ---------------- ------------- -------------- ------------------------------
+
+Initial seed data for system_config:
+
+-   orbit_mode = \'manual\' (default scheduling mode)
+
+-   orbit_semi_delay_minutes = \'30\' (Semi-Auto hold window)
+
+-   orbit_max_retries = \'3\' (max publish retry attempts)
+
+-   orbit_platforms_enabled = \'tiktok,instagram,linkedin\' (active
+    platforms)
+
+**4.2 Indexes**
+
+-   schedule_logs: (publish_log_id, platform) UNIQUE --- one post per
+    platform per video
+
+-   schedule_logs: (status) --- fast queued/failed lookups
+
+-   schedule_logs: (platform, status) --- per-platform status queries
+
+-   schedule_logs: (created_at DESC) --- dashboard recent posts
+
+-   platform_accounts: (platform, is_active) --- active account lookups
+
+**5. n8n Workflow Design**
+
+**5.1 New Workflows**
+
+  -------- ------------------- ---------------- ----------------------------
+  **\#**   **Workflow**        **Trigger**      **Purpose**
+
+  12       **ELECTRON-4        Cron (every 5    Detects ready_to_post
+           Scheduler v1**      min)             videos, applies mode logic,
+                                                routes to Telegram or
+                                                platforms
+
+  13       **ORBIT Publisher   Webhook (from    Executes actual API calls to
+           v1**                Scheduler or     TikTok/Instagram/LinkedIn,
+                               Telegram)        handles retries
+
+  14       **ORBIT Dashboard   Webhook GET      Serves schedule_logs data to
+           API v1**                             dashboard Orbit tab
+  -------- ------------------- ---------------- ----------------------------
+
+**5.2 Modified Workflows**
+
+  ------------------------- ---------------------------------------------
+  **Existing Workflow**     **Modification**
+
+  Brief Approval Handler    Add ORBIT buttons after E3 completes:
+  v11                       \[TikTok\] \[Instagram\] \[LinkedIn\] \[All\]
+                            \[Hold\]
+
+  Dashboard API v1          Add /orbit endpoint returning schedule_logs
+                            data
+
+  Dashboard Actions v1      Add orbit_post, orbit_hold, orbit_retry,
+                            orbit_mode actions
+
+  Error Logger v1           Handle E4 publish failures with
+                            platform-specific error codes
+
+  Health & Stale Check v1   Add /orbit_status command showing platform
+                            connection health
+  ------------------------- ---------------------------------------------
+
+**5.3 E4 Scheduler Workflow Detail**
+
+The E4 Scheduler is the brain of ORBIT. It runs every 5 minutes, checks
+for new ready-to-post videos, and applies the appropriate scheduling
+mode logic.
+
+**5.3.1 Node-by-Node Walkthrough**
+
+1.  **Cron Trigger:** Fires every 5 minutes
+
+2.  **Fetch Ready Videos:** PostgreSQL query: SELECT \* FROM
+    publish_logs WHERE status = \'ready_to_post\' AND id NOT IN (SELECT
+    publish_log_id FROM schedule_logs)
+
+3.  **Get Mode:** PostgreSQL query: SELECT value FROM system_config
+    WHERE key = \'orbit_mode\'
+
+4.  **Mode Router (Switch):** Branches to Manual / Semi-Auto / Full Auto
+    paths
+
+5.  **Manual Path:** Send Telegram message with platform selection
+    buttons, insert schedule_logs row with status=\'queued\'
+
+6.  **Semi-Auto Path:** Send Telegram preview with Hold button, set
+    scheduled_at = NOW() + 30 min, insert with status=\'queued\'
+
+7.  **Full Auto Path:** Immediately call ORBIT Publisher webhook for all
+    enabled platforms
+
+8.  **Semi-Auto Timer:** Separate Cron checks for queued posts where
+    scheduled_at \< NOW() and no Hold received
+
+**6. Telegram Interface**
+
+**6.1 New ORBIT Messages**
+
+**6.1.1 Manual Mode --- Ready for Orbit**
+
++-----------------------------------------------------------------------+
+| **Telegram Message Template**                                         |
+|                                                                       |
+| 🚀 ORBIT --- Ready for Launch!                                        |
+|                                                                       |
+| 🎬 Video: Steps Challenge --- Walk 10K in 7 Days                      |
+|                                                                       |
+| 🎯 Module: Steps \| Funnel: B2C                                       |
+|                                                                       |
+| 📱 Platforms: TikTok, Instagram, LinkedIn                             |
+|                                                                       |
+| Caption Preview: \"Your body was built to move. Start with 10K        |
+| steps\...\"                                                           |
+|                                                                       |
+| Buttons:                                                              |
+|                                                                       |
+| \[🎵 TikTok\] \[📸 Instagram\] \[💼 LinkedIn\]                        |
+|                                                                       |
+| \[🚀 All Platforms\] \[⏸ Hold\]                                       |
++-----------------------------------------------------------------------+
+
+**6.1.2 Semi-Auto Mode --- Launch Preview**
+
++-----------------------------------------------------------------------+
+| **Telegram Message Template**                                         |
+|                                                                       |
+| 🟡 ORBIT --- Auto-Launch in 30 min                                    |
+|                                                                       |
+| 🎬 Video: Meal Prep Sunday --- High Protein Edition                   |
+|                                                                       |
+| 🎯 Module: Meals \| Funnel: B2C                                       |
+|                                                                       |
+| 📱 Launching to: TikTok, Instagram, LinkedIn                          |
+|                                                                       |
+| ⏰ Auto-launch at: 11:30 AM Cairo                                     |
+|                                                                       |
+| \[⏸ Hold\] \[❌ Cancel\] \[🚀 Launch Now\]                            |
++-----------------------------------------------------------------------+
+
+**6.1.3 Post Confirmation**
+
++-----------------------------------------------------------------------+
+| **Telegram Message Template**                                         |
+|                                                                       |
+| ✅ ORBIT --- Successfully Posted!                                     |
+|                                                                       |
+| 🎵 TikTok: https://tiktok.com/@corpfit/video/12345                    |
+|                                                                       |
+| 📸 Instagram: https://instagram.com/reel/AbCdEf                       |
+|                                                                       |
+| 💼 LinkedIn: https://linkedin.com/posts/corpfit-12345                 |
+|                                                                       |
+| 📅 Posted at: 11:02 AM Cairo \| Mode: Manual                          |
++-----------------------------------------------------------------------+
+
+**6.2 New Telegram Commands**
+
+  ---------------------- ------------------------------------------------
+  **Command**            **Action**
+
+  /orbit_mode manual     Switch to Manual mode (every post needs
+                         approval)
+
+  /orbit_mode semi       Switch to Semi-Auto mode (30-min preview window)
+
+  /orbit_mode auto       Switch to Full Auto mode (immediate posting)
+
+  /orbit_status          Show current mode + platform connection health +
+                         queue count
+
+  /orbit_queue           List all queued/held posts waiting to be
+                         published
+
+  /orbit_retry \[id\]    Retry a failed publish attempt
+  ---------------------- ------------------------------------------------
+
+**7. Dashboard Updates**
+
+**7.1 New Orbit Tab**
+
+A new fifth tab added to the CorpFit Dashboard showing the publishing
+pipeline status. This tab provides a mission-control view of all content
+moving through ORBIT.
+
+**7.1.1 Tab Sections**
+
+-   **Queue Panel:** Videos waiting to be published. Shows video
+    thumbnail, module, platforms, scheduled time. Actions: \[Launch
+    Now\] \[Hold\] \[Cancel\]
+
+-   **Live Panel:** Successfully published content. Shows platform icons
+    with clickable links to live posts. Timestamp of when posted.
+
+-   **Failed Panel:** Posts that failed with error details. Actions:
+    \[Retry\] \[Skip\]. Error message and retry count visible.
+
+-   **Stats Bar:** Top summary showing: Total Posted (24h) \| Queue Size
+    \| Success Rate \| Mode indicator (red/yellow/green dot)
+
+**7.1.2 Dashboard Actions**
+
+  ------------------ ------------------ ----------------------------------
+  **Button**         **API Action**     **Behavior**
+
+  🚀 Launch Now      orbit_post         Immediately publish to selected
+                                        platform(s)
+
+  ⏸ Hold             orbit_hold         Cancel auto-launch timer, keep in
+                                        queue
+
+  🔄 Retry           orbit_retry        Re-attempt a failed publish
+
+  ❌ Cancel          orbit_cancel       Remove from queue entirely, mark
+                                        as cancelled
+
+  ⚙ Mode             orbit_mode         Toggle between Manual/Semi/Auto
+                                        (settings gear icon)
+  ------------------ ------------------ ----------------------------------
+
+**8. Platform Account Setup Guide**
+
+CorpFit needs developer accounts on each platform before ORBIT can
+publish. This section provides step-by-step setup instructions for each
+platform.
+
+**8.1 TikTok Developer Setup**
+
+1.  Go to developers.tiktok.com and create a developer account
+
+2.  Create a new app. Add products: \"Login Kit\" and \"Content Posting
+    API\"
+
+3.  Configure redirect URI:
+    https://n8n.corpfit.cloud/rest/oauth2-credential/callback
+
+4.  Request scopes: user.info.basic, video.publish, video.upload
+
+5.  Verify domain ownership for corpfit.cloud in Manage URL Properties
+
+6.  Test in Sandbox mode (posts will be private). Submit for audit to go
+    public.
+
+7.  Store Client Key and Client Secret in platform_accounts table
+
+**8.2 Instagram / Meta Setup**
+
+-   Create/convert Instagram account to Business or Creator type
+
+-   Link Instagram account to a Facebook Page
+
+-   Go to developers.facebook.com and create a Facebook App (type:
+    Business)
+
+-   Add products: Facebook Login + Instagram Graph API
+
+-   Request permissions: instagram_basic, instagram_content_publish,
+    pages_read_engagement
+
+-   Generate long-lived Page Access Token (60 days, auto-refreshable)
+
+-   Get Instagram Business Account ID via: GET
+    /{page-id}?fields=instagram_business_account
+
+-   Store access_token and ig_user_id in platform_accounts table
+
+**8.3 LinkedIn Setup**
+
+-   Create a LinkedIn Company Page for CorpFit (if not already existing)
+
+-   Go to linkedin.com/developers and create an app associated with the
+    Company Page
+
+-   Request products: \"Share on LinkedIn\" and \"Sign In with LinkedIn
+    using OpenID Connect\"
+
+-   Verify Company Page in app settings
+
+-   Request scope: w_member_social (personal) or w_organization_social
+    (company page)
+
+-   Generate OAuth 2.0 access token via 3-legged flow
+
+-   Get organization URN: urn:li:organization:{company_id}
+
+-   Store access_token and org URN in platform_accounts table
+
+**9. Security Considerations**
+
+-   **Token encryption:** All OAuth tokens stored in platform_accounts
+    should be encrypted at rest. Use PostgreSQL pgcrypto extension or
+    application-layer encryption.
+
+-   **Token refresh:** Build automatic token refresh logic. TikTok
+    tokens expire in 24h (refreshable), Instagram page tokens last 60
+    days, LinkedIn tokens last 60 days.
+
+-   **Rate limiting:** Implement per-platform rate limiting in the ORBIT
+    Publisher. TikTok: 30 req/min. Instagram: 25 posts/24h. LinkedIn:
+    150 posts/day.
+
+-   **Error isolation:** A failure on one platform should never block
+    publishing to others. Each platform call is independent.
+
+-   **Audit logging:** Every publish attempt logged with full
+    request/response metadata for debugging.
+
+**10. Implementation Plan**
+
+Estimated build time: 5-7 days at 4-6 hours per day. Build order follows
+dependency chain.
+
+  --------- ----------- ------------------------------- ------------------------
+  **Day**   **Hours**   **Deliverables**                **Dependencies**
+
+  **1**     4-5h        Database tables (schedule_logs, PostgreSQL access
+                        platform_accounts,              
+                        system_config) + indexes + seed 
+                        data. E4 Scheduler workflow     
+                        skeleton in n8n.                
+
+  **2**     5-6h        E4 Scheduler full               Day 1 DB tables
+                        implementation: Cron trigger,   
+                        ready video detection, mode     
+                        routing, Manual mode Telegram   
+                        messages with platform buttons. 
+
+  **3**     5-6h        ORBIT Publisher workflow:       Platform API keys
+                        TikTok publish flow (init,      
+                        status poll, store). Instagram  
+                        publish flow (container, poll,  
+                        publish). LinkedIn publish flow 
+                        (init, upload, post).           
+
+  **4**     4-5h        Semi-Auto mode (timer logic +   Day 2-3 workflows
+                        Hold handling). Full Auto mode  
+                        path. Modify Brief Approval     
+                        Handler v11 to add ORBIT        
+                        buttons after E3.               
+
+  **5**     5-6h        Dashboard Orbit tab:            Day 1-3 complete
+                        queue/live/failed panels +      
+                        stats bar. ORBIT Dashboard API  
+                        endpoint. Dashboard Actions for 
+                        orbit_post/hold/retry/cancel.   
+
+  **6**     4-5h        Telegram commands (/orbit_mode, Day 4 complete
+                        /orbit_status, /orbit_queue).   
+                        Error handling + retry logic.   
+                        Error Logger integration for E4 
+                        failures.                       
+
+  **7**     4-5h        End-to-end testing: Manual mode All workflows live
+                        full cycle. Token refresh       
+                        logic. Documentation update     
+                        (Daily Operations Guide v2).    
+                        Final report.                   
+  --------- ----------- ------------------------------- ------------------------
+
++-----------------------------------------------------------------------+
+| **Note: Days 1-2 require NO platform API keys**                       |
+|                                                                       |
+| We can build the entire infrastructure (database, scheduler, Telegram |
+| interface,                                                            |
+|                                                                       |
+| dashboard tab) before any social media accounts exist. Platform API   |
+| keys only                                                             |
+|                                                                       |
+| become required on Day 3 when we build the actual Publisher workflow. |
+|                                                                       |
+| This means you can set up TikTok/Instagram/LinkedIn accounts in       |
+| parallel.                                                             |
++-----------------------------------------------------------------------+
+
+**11. Cost Analysis**
+
+  ---------------------- ------------------ ------------------------------
+  **Item**               **Monthly Cost**   **Notes**
+
+  TikTok API             \$0                Free tier, no usage charges
+
+  Instagram Graph API    \$0                Free via Facebook Developer
+                                            platform
+
+  LinkedIn API           \$0                Free for basic posting
+                                            (Partner for advanced)
+
+  PostgreSQL (existing)  \$0                Already running in Docker
+                                            stack
+
+  n8n (existing)         \$0                Self-hosted, no additional
+                                            cost
+
+  Cloudflare Worker      \$0                Dashboard already hosted, new
+  (existing)                                tab only
+
+  **TOTAL ORBIT COST**   **\$0/month**      **All platform APIs are free.
+                                            Infrastructure already
+                                            exists.**
+  ---------------------- ------------------ ------------------------------
+
+Combined with the existing QUANTUM pipeline cost of \~\$0.66/month
+(Anthropic API), the total system cost for content creation AND
+publishing remains under \$1/month.
+
+**12. Success Metrics**
+
+  ------------------------- ---------------------- ----------------------
+  **Metric**                **Target**             **Measurement**
+
+  Publish success rate      \> 95%                 live / (live + failed)
+
+  Time to publish (Manual)  \< 2 min from tap      posted_at - operator
+                                                   tap time
+
+  Time to publish (Auto)    \< 5 min from E3       posted_at - E3
+                                                   completion
+
+  Platform coverage         3/3 platforms          Active
+                                                   platform_accounts
+                                                   count
+
+  Retry resolution rate     \> 80%                 Retries that succeed /
+                                                   total retries
+
+  Operator response time    \< 15 min              Average time to
+                                                   approve in Manual mode
+  ------------------------- ---------------------- ----------------------
+
+**13. Future Phase: Analytics & Insights**
+
+Once ORBIT is publishing content, the natural next step is tracking
+performance. This section outlines the analytics system planned for
+Phase 3, which will leverage the platform post IDs stored by ORBIT to
+pull engagement data.
+
+-   **TikTok Analytics:** Video views, likes, comments, shares, average
+    watch time via Query Video API
+
+-   **Instagram Insights:** Reach, plays, likes, saves, shares, comments
+    via GET /{media-id}/insights
+
+-   **LinkedIn Analytics:** Views, time watched, engagement rate via
+    Video Analytics API (6-month window)
+
+-   **Unified Dashboard:** All platform metrics in one view, identifying
+    top performers and optimal posting times
+
+-   **Smart Recycler:** AI identifies top-performing content for
+    repurposing and reposting on different platforms
+
+-   **App API:** Feed performance data into CorpFit mobile app for
+    client-facing analytics
+
+*--- End of ELECTRON-4 / ORBIT Planning Document ---*

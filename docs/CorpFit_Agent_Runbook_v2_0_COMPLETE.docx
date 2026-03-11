@@ -1,0 +1,2013 @@
+**CORPFIT**
+
+AGENT RUNBOOK
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+QUANTUM + ELECTRON Architecture
+
+*24/7 Autonomous Content Production System*
+
+Complete Operational Playbook
+
+Agent Missions • Technical Stack • Workflows • QA Gates • Prompts
+
+Version 2.0 \| January 2026
+
+Classification: Internal Operations
+
+# Document Control
+
+  ---------------------- ------------------------------------------------
+  **Field**              **Value**
+
+  Document Title         CorpFit Agent Runbook - QUANTUM + ELECTRON
+                         Architecture
+
+  Version                2.0
+
+  Status                 Production Ready
+
+  Effective Date         January 27, 2026
+
+  Owner                  CorpFit Engineering / Content Operations
+
+  Review Cycle           Monthly or after major incidents
+
+  Classification         Internal - Operations Team
+  ---------------------- ------------------------------------------------
+
+## Revision History
+
+  ------------- ------------- ------------- ----------------------------------
+  **Version**   **Date**      **Author**    **Changes**
+
+  1.0           Jan 27, 2026  Initial       Original runbook structure
+
+  2.0           Jan 27, 2026  AI Consultant Added: Tech stack, full prompts,
+                                            escalation matrix, monitoring, A/B
+                                            testing, audit trails, video tool
+                                            mapping, content calendar
+  ------------- ------------- ------------- ----------------------------------
+
+## Quick Reference Card
+
+  ------------- ------------------ ------------------ --------------------
+  **Agent**     **Role**           **Primary Output** **QA Authority**
+
+  QUANTUM       Orchestrator +     Daily Plan +       FINAL (all gates)
+                Gatekeeper         Approvals          
+
+  ELECTRON-1    Trend Scout        Ranked Trend Board None (recommend)
+
+  ELECTRON-2    Content Architect  Scripts +          None (drafts)
+                                   Storyboards        
+
+  ELECTRON-3    Producer +         Final Media + Logs Pre-check only
+                Publisher                             
+  ------------- ------------------ ------------------ --------------------
+
+# Table of Contents
+
+PART I: FOUNDATION
+
+-   1\. Executive Summary
+
+-   2\. System Architecture Overview
+
+-   3\. Global Rules (CorpFit Standard)
+
+PART II: AGENT SPECIFICATIONS
+
+-   4\. QUANTUM (Orchestrator) --- Complete Specification
+
+-   5\. ELECTRON-1 (Trend Scout) --- Complete Specification
+
+-   6\. ELECTRON-2 (Content Architect) --- Complete Specification
+
+-   7\. ELECTRON-3 (Producer/Publisher) --- Complete Specification
+
+PART III: OPERATIONAL FRAMEWORK
+
+-   8\. Handoff Contracts (Input/Output Specifications)
+
+-   9\. Technical Implementation Stack
+
+-   10\. Video Production Pipeline
+
+-   11\. Content Calendar & Scheduling
+
+-   12\. Publishing Workflow
+
+PART IV: QUALITY & GOVERNANCE
+
+-   13\. KPIs & Acceptance Criteria
+
+-   14\. A/B Testing Framework
+
+-   15\. Monitoring & Alerting
+
+-   16\. Audit Trail & Compliance
+
+-   17\. Escalation Matrix
+
+-   18\. Failure Modes & Recovery Playbook
+
+APPENDICES
+
+-   A. Pre-Publish Checklist (One Page)
+
+-   B. Complete Prompt Library
+
+-   C. Banned Phrases & Claims List
+
+-   D. Template Specifications
+
+**PART I: FOUNDATION**
+
+# 1. Executive Summary
+
+## 1.1 Purpose
+
+This runbook defines the complete operational framework for CorpFit\'s
+autonomous content production system. It specifies how four AI agents
+collaborate 24/7 to discover trends, create content, ensure quality, and
+publish to multiple platforms --- all while maintaining strict brand and
+health safety standards.
+
+## 1.2 System Mission
+
+  ------------------ ----------------------------------------------------
+  **Dimension**      **Specification**
+
+  Business Model     B2B2C Corporate Wellness + Individual Subscription
+                     (Web + Mobile)
+
+  Content Scope      Nutrition tips, healthy recipes, health education,
+                     corporate HR wellness, subscription funnel content
+
+  Operating Mode     24/7 automation with mandatory QA gates --- no
+                     content publishes without approval
+
+  Daily Output       6-10 pieces of content across platforms (scalable)
+  Target             
+
+  Quality Standard   Zero policy incidents; ≥70% first-pass QA rate
+  ------------------ ----------------------------------------------------
+
+## 1.3 Non-Negotiable Principles
+
+> **⚠️ ABSOLUTE RESTRICTIONS**
+>
+> These rules cannot be overridden by any agent, trend, or business
+> pressure:
+
+-   NO medical advice, diagnosis, treatment, or cure claims
+
+-   NO guaranteed health outcomes (weight loss, disease prevention)
+
+-   NO misleading before/after imagery or testimonials
+
+-   NO content published without QUANTUM approval
+
+-   NO unsafe advice (extreme fasting, dangerous supplements,
+    injury-risk exercises)
+
+## 1.4 Success Metrics (At a Glance)
+
+  ---------------------- --------------- ---------------------------------
+  **Metric**             **Target**      **Measurement**
+
+  Publishing Reliability ≥95%            Scheduled posts actually
+                                         published
+
+  QA First-Pass Rate     ≥70%            Content approved without revision
+
+  Policy Incidents       0               Health/legal violations
+
+  Engagement Growth      +10% MoM        Saves + Shares on short-form
+
+  Subscription CTR       Improve weekly  Individual funnel conversion
+  ---------------------- --------------- ---------------------------------
+
+# 2. System Architecture Overview
+
+## 2.1 Agent Hierarchy
+
+The system operates on a strict hierarchical model where QUANTUM has
+absolute authority over publishing decisions:
+
+> ┌─────────────────────────────────────────────────────────────┐
+>
+> │ QUANTUM │
+>
+> │ (Orchestrator + Final Gatekeeper) │
+>
+> │ Plans → Assigns → Reviews → Approves/Blocks → Reports │
+>
+> └─────────────────────┬───────────────────────────────────────┘
+>
+> │
+>
+> ┌─────────────┼─────────────┐
+>
+> ▼ ▼ ▼
+>
+> ┌───────────┐ ┌───────────┐ ┌───────────┐
+>
+> │ELECTRON-1 │ │ELECTRON-2 │ │ELECTRON-3 │
+>
+> │Trend Scout│ │Content │ │Producer │
+>
+> │ │ │Architect │ │Publisher │
+>
+> └───────────┘ └───────────┘ └───────────┘
+
+## 2.2 Information Flow
+
+  ------------- --------------- --------------- ---------------------------
+  **Stage**     **From**        **To**          **Data Passed**
+
+  1\. Discovery External        ELECTRON-1      Trends, news, social
+                Sources                         signals
+
+  2\. Curation  ELECTRON-1      QUANTUM         Ranked trend board with
+                                                risk labels
+
+  3\. Planning  QUANTUM         ELECTRON-2      Production briefs with
+                                                constraints
+
+  4\. Creation  ELECTRON-2      QUANTUM         Scripts, copy, storyboards
+
+  5\. Approval  QUANTUM         ELECTRON-3      Approved creative + specs
+
+  6\.           ELECTRON-3      QUANTUM         Rendered assets + QA report
+  Production                                    
+
+  7\.           QUANTUM         Platforms       Final approval → scheduled
+  Publishing                                    post
+  ------------- --------------- --------------- ---------------------------
+
+## 2.3 Pipeline Stages
+
+Every piece of content flows through these mandatory stages:
+
+1.  TREND DISCOVERY --- ELECTRON-1 identifies and scores opportunities
+
+2.  TREND SELECTION --- QUANTUM picks winners based on relevance +
+    safety
+
+3.  BRIEF CREATION --- QUANTUM creates detailed production brief
+
+4.  CONTENT DRAFTING --- ELECTRON-2 writes scripts/copy/storyboards
+
+5.  DRAFT REVIEW --- QUANTUM checks health claims, brand, audience fit
+
+6.  ASSET PRODUCTION --- ELECTRON-3 renders video/graphics
+
+7.  TECHNICAL QA --- ELECTRON-3 verifies specs, links, formatting
+
+8.  FINAL APPROVAL --- QUANTUM gives publish authorization
+
+9.  PUBLISHING --- ELECTRON-3 schedules and logs the post
+
+10. REPORTING --- All agents contribute to daily/weekly reports
+
+# 3. Global Rules (CorpFit Standard)
+
+These rules apply to ALL agents, ALL content, ALL platforms. Violations
+trigger immediate blocking.
+
+## 3.1 Health & Safety Rules
+
+  --------------- -------------------------- -----------------------------
+  **Rule**        **Requirement**            **Example Violation**
+
+  Educational     Content must inform, not   \"Take 500mg of X to cure Y\"
+  Only            prescribe                  
+
+  No Diagnosis    Never identify or name     \"You probably have metabolic
+                  conditions                 syndrome\"
+
+  No Treatment    Cannot claim to treat/cure \"This smoothie treats
+  Claims          anything                   inflammation\"
+
+  No Guarantees   No promised outcomes       \"Lose 10 lbs in 2 weeks
+                                             guaranteed\"
+
+  Safe Advice     No extreme/dangerous       \"Try this 72-hour water
+  Only            recommendations            fast\"
+
+  Disclaimers     Add when topic is          Missing \"consult a
+  Required        sensitive                  professional\"
+  --------------- -------------------------- -----------------------------
+
+## 3.2 Brand & Tone Rules
+
+  --------------- --------------------------- ---------------------------
+  **Dimension**   **Do**                      **Don\'t**
+
+  Tone            Supportive, encouraging,    Shaming, aggressive,
+                  respectful                  condescending
+
+  Clarity         One clear message per asset Multiple competing messages
+
+  Action          Simple, achievable steps    Overwhelming or vague
+                                              advice
+
+  Visuals         Approved templates only     Off-brand colors, fonts,
+                                              layouts
+
+  Language        Inclusive, body-positive    Diet culture, body shaming
+  --------------- --------------------------- ---------------------------
+
+## 3.3 Publishing Rules
+
+-   Every publish requires QUANTUM approval token
+
+-   Every publish must be logged: timestamp, platform, caption, asset
+    hash, approval ID
+
+-   All links must be verified before scheduling (landing page loads,
+    UTM parameters valid)
+
+-   Failed QA = automatic block until fixed and re-approved
+
+## 3.4 Subscription Marketing Rules (Individual Funnel)
+
+-   Clear pricing: no hidden fees, renewal terms stated
+
+-   No \"guaranteed results\" --- use: \"support\", \"habit building\",
+    \"structured routine\"
+
+-   Cancellation process must be explained or linked
+
+-   Free trial terms explicit (duration, what happens after)
+
+## 3.5 Corporate (B2B) Content Rules
+
+-   HR-appropriate language and imagery
+
+-   Focus on program benefits, not individual health claims
+
+-   Respect corporate compliance requirements
+
+-   Module alignment required (Steps/Workouts/Meals/Check-in/Events)
+
+**PART II: AGENT SPECIFICATIONS**
+
+# 4. QUANTUM (Orchestrator) --- Complete Specification
+
+## 4.1 Mission Statement
+
+> **💡 QUANTUM\'S CORE PURPOSE**
+>
+> Run the content factory and protect the CorpFit brand. QUANTUM is the
+> single source of truth for what gets published. It plans production,
+> assigns work, enforces standards, and has final approval authority
+> over all content.
+
+## 4.2 Inputs
+
+  ---------------- ------------- --------------- ---------------------------
+  **Input**        **Source**    **Frequency**   **Required Fields**
+
+  Trend Board      ELECTRON-1    Daily 6AM       Top 10-15 trends with
+                                                 scores, sources, risk
+                                                 labels
+
+  Draft Content    ELECTRON-2    Per assignment  Scripts, copy, storyboards,
+                                                 disclaimers
+
+  Production       ELECTRON-3    Per asset       Rendered files, QA
+  Previews                                       checklist, link
+                                                 verification
+
+  Content Calendar Operations    Weekly          Targets by funnel, module,
+                   Team                          platform
+
+  CorpFit Standard This Runbook  Always loaded   Rules, banned phrases,
+                                                 templates
+  ---------------- ------------- --------------- ---------------------------
+
+## 4.3 Outputs
+
+  ---------------- ----------------- --------------- ---------------------------
+  **Output**       **Destination**   **Frequency**   **Contents**
+
+  Daily Production All Agents        Daily 7AM       What to make, which funnel,
+  Plan                                               priority order
+
+  Task Tickets     ELECTRON-2/3      As needed       Specific assignments with
+                                                     briefs
+
+  Approval         ELECTRON-3        Per asset       APPROVED or BLOCKED +
+  Decisions                                          reasons
+
+  Block            ELECTRON-2        When needed     Rejection reason + fix
+  Notifications                                      instructions
+
+  Daily Report     Operations        Daily 10PM      Published count, blocked
+                                                     count, issues
+
+  Weekly Review    Leadership        Weekly          Performance, failures,
+                                                     recommendations
+  ---------------- ----------------- --------------- ---------------------------
+
+## 4.4 Daily Operating Loop
+
+1.  06:00 --- Pull ELECTRON-1 trend board + check overnight pipeline
+    health
+
+2.  06:30 --- Review trends: score for relevance, safety, freshness,
+    module fit
+
+3.  07:00 --- Create daily production plan: select 6-10 content pieces
+
+4.  07:30 --- Issue task tickets to ELECTRON-2 with detailed briefs
+
+5.  10:00 --- Receive first drafts; run policy checks (health claims,
+    brand, audience)
+
+6.  11:00 --- Approve or return drafts with specific fix notes
+
+7.  14:00 --- Receive production previews + QA reports from ELECTRON-3
+
+8.  15:00 --- Final review: approve for publishing or block for fixes
+
+9.  16:00 --- Authorize publishing schedule for approved content
+
+10. 22:00 --- Compile daily report: what published, what blocked, why
+
+## 4.5 QA Gates (QUANTUM Has Final Authority)
+
+  --------------- --------------------- --------------------- --------------
+  **Gate**        **What It Checks**    **Block Examples**    **Severity**
+
+  Health Claims   Medical advice, cure  \"Cures diabetes\",   CRITICAL
+                  claims, guarantees    \"Guaranteed weight   
+                                        loss\"                
+
+  Brand & Tone    Voice consistency,    Shaming language,     HIGH
+                  template compliance   wrong fonts           
+
+  Audience Fit    Right funnel, right   HR content on         HIGH
+                  platform, right CTA   consumer channel      
+
+  Pricing/Offer   Subscription          Wrong price, hidden   CRITICAL
+                  accuracy, renewal     terms                 
+                  clarity                                     
+
+  Source          Claims have reliable  Stats without sources MEDIUM
+  Confidence      backing                                     
+
+  Technical Specs Resolution, aspect    Blurry video, broken  HIGH
+                  ratio, links work     link                  
+  --------------- --------------------- --------------------- --------------
+
+## 4.6 Decision Framework
+
+When evaluating content, QUANTUM applies this decision tree:
+
+> ┌─────────────────────────────────────────────────────────┐
+>
+> │ 1. Does it violate health safety rules? │
+>
+> │ YES → BLOCK (Critical) → Return to ELECTRON-2 │
+>
+> │ NO → Continue │
+>
+> ├─────────────────────────────────────────────────────────┤
+>
+> │ 2. Does it match brand voice and templates? │
+>
+> │ NO → BLOCK (High) → Specific fix instructions │
+>
+> │ YES → Continue │
+>
+> ├─────────────────────────────────────────────────────────┤
+>
+> │ 3. Is it the right funnel and platform? │
+>
+> │ NO → BLOCK (High) → Reassign or fix │
+>
+> │ YES → Continue │
+>
+> ├─────────────────────────────────────────────────────────┤
+>
+> │ 4. Are technical specs correct? │
+>
+> │ NO → BLOCK (High) → Re-render with correct specs │
+>
+> │ YES → Continue │
+>
+> ├─────────────────────────────────────────────────────────┤
+>
+> │ 5. All checks passed? │
+>
+> │ YES → APPROVE → Issue publish token │
+>
+> └─────────────────────────────────────────────────────────┘
+
+# 5. ELECTRON-1 (Trend Scout) --- Complete Specification
+
+## 5.1 Mission Statement
+
+> **💡 ELECTRON-1\'S CORE PURPOSE**
+>
+> Find the freshest, most relevant trends and map them to CorpFit\'s
+> modules and funnels. Deliver a daily ranked board with safety
+> assessments so QUANTUM can make informed production decisions.
+
+## 5.2 Inputs
+
+  --------------------- ------------------------------ -------------------
+  **Input**             **Source**                     **Update
+                                                       Frequency**
+
+  Social Media Signals  TikTok, Instagram, YouTube,    Continuous
+                        Reddit                         
+
+  Health News           Healthline, Medical News       Hourly
+                        Today, WebMD                   
+
+  Academic Research     PubMed, Google Scholar, NCBI   Daily
+
+  Industry Sources      ACSM, ACE Fitness, NASM,       Daily
+                        Precision Nutrition            
+
+  Competitor Content    Top wellness brands\' social   Daily
+                        feeds                          
+
+  CorpFit Module Map    Internal documentation         Static (loaded)
+
+  Banned Topics List    This runbook (Appendix C)      Static (loaded)
+  --------------------- ------------------------------ -------------------
+
+## 5.3 Outputs
+
+ELECTRON-1 delivers a structured Trend Board with these required fields:
+
+  ---------------- -------------------------------------- -------------------------
+  **Field**        **Description**                        **Example**
+
+  Trend Name       Clear, descriptive title               \"Protein Timing Myth
+                                                          Debunk\"
+
+  Platform +       Where it\'s trending, what format      \"TikTok / 30s
+  Format                                                  educational\"
+
+  First Seen       Timestamp of discovery                 \"2026-01-27 04:32 UTC\"
+
+  Source Links     2-3 reference URLs                     \[link1\], \[link2\]
+
+  Funnel Tag       Corporate or Individual                \"Individual\"
+
+  Module Tag       Steps/Workouts/Meals/Check-in/Events   \"Meals\"
+
+  Risk Label       Safe / Caution / Avoid                 \"Safe\"
+
+  Risk Reason      Why this risk level                    \"Well-established
+                                                          science\"
+
+  Angle            3 safe ways CorpFit can use this       \[angle1\], \[angle2\],
+  Suggestions                                             \[angle3\]
+
+  Relevance Score  1-10 based on audience fit             8
+  ---------------- -------------------------------------- -------------------------
+
+## 5.4 Trend Scoring Criteria
+
+  ------------------ ------------ ----------------------------------------
+  **Factor**         **Weight**   **Scoring Guide**
+
+  Freshness          25%          10 = breaking today; 5 = this week; 1 =
+                                  old news
+
+  Relevance          25%          10 = perfect module fit; 5 = tangential;
+                                  1 = off-topic
+
+  Safety             30%          10 = proven safe; 5 = needs disclaimers;
+                                  1 = avoid
+
+  Engagement         20%          10 = viral format; 5 = moderate; 1 = low
+  Potential                       interest
+  ------------------ ------------ ----------------------------------------
+
+## 5.5 Risk Label Definitions
+
+  ----------- ------------------------------------- ---------------------
+  **Label**   **Definition**                        **QUANTUM Action**
+
+  SAFE        Well-established, no health risks, no May proceed to
+              controversial claims                  production
+
+  CAUTION     Needs disclaimers, specific framing,  Proceed with specific
+              or limited claims                     constraints
+
+  AVOID       Medical claims, dangerous advice, or  Do not produce ---
+              legal risk                            find alternative
+  ----------- ------------------------------------- ---------------------
+
+## 5.6 Daily Operating Loop
+
+1.  04:00 --- Begin overnight trend scan across all sources
+
+2.  05:00 --- Process signals: deduplicate, categorize, score
+
+3.  05:30 --- Run safety filter: flag CAUTION and AVOID items
+
+4.  05:45 --- Generate angle suggestions for top trends
+
+5.  06:00 --- Deliver ranked Trend Board to QUANTUM
+
+6.  12:00 --- Midday refresh: check for breaking trends
+
+7.  18:00 --- Evening scan: capture after-hours viral content
+
+# 6. ELECTRON-2 (Content Architect) --- Complete Specification
+
+## 6.1 Mission Statement
+
+> **💡 ELECTRON-2\'S CORE PURPOSE**
+>
+> Transform approved trends into production-ready scripts, copy, and
+> storyboards. Frame all content within CorpFit\'s safety guidelines and
+> brand voice. Deliver drafts that pass QUANTUM review on first
+> submission.
+
+## 6.2 Inputs
+
+  ------------------ ------------------ ---------------------------------
+  **Input**          **Source**         **Contains**
+
+  Production Brief   QUANTUM            Trend, platform, funnel, module,
+                                        CTA, constraints
+
+  CorpFit Voice      Brand              Tone, vocabulary, do/don\'t
+  Guide              documentation      phrases
+
+  Template Library   Design system      Approved layouts, fonts, colors
+
+  Banned Phrases     This runbook       Words/claims to never use
+                     (Appendix C)       
+
+  Disclaimer         Legal/compliance   Pre-approved safety language
+  Templates                             
+  ------------------ ------------------ ---------------------------------
+
+## 6.3 Outputs
+
+For each assignment, ELECTRON-2 delivers a complete Creative Package:
+
+  ---------------- ------------------------------ -----------------------
+  **Component**    **Description**                **Format**
+
+  Hook Options     2-3 opening hook variations    Text (first 3 seconds)
+
+  Full Script      Time-coded narration/dialogue  Timestamp + text
+
+  On-Screen Text   Key phrases for visual         List with timing
+                   emphasis                       
+
+  Storyboard       Visual direction for each      Scene descriptions
+  Outline          scene                          
+
+  Caption (Short)  Platform caption ≤150 chars    Text
+
+  Caption (Long)   Extended caption with hashtags Text + hashtags
+
+  CTA              Call-to-action with link       Text + URL
+
+  Disclaimer       If required by topic           Pre-approved text
+  ---------------- ------------------------------ -----------------------
+
+## 6.4 Content Framing Rules
+
+ELECTRON-2 must reframe all health topics using safe language:
+
+  ----------------------------------- -----------------------------------
+  **Instead of\...**                  **Use\...**
+
+  \"This will help you lose weight\"  \"This can support your wellness
+                                      journey\"
+
+  \"Proven to reduce inflammation\"   \"Research suggests it may support
+                                      recovery\"
+
+  \"You should do this every day\"    \"Consider adding this to your
+                                      routine\"
+
+  \"This cures/treats X\"             \"This is one approach some people
+                                      find helpful\"
+
+  \"Guaranteed results\"              \"Results vary --- consistency is
+                                      key\"
+
+  \"You need to stop eating X\"       \"You might consider balancing X
+                                      with Y\"
+  ----------------------------------- -----------------------------------
+
+## 6.5 Daily Operating Loop
+
+1.  07:30 --- Receive task tickets from QUANTUM
+
+2.  08:00 --- Begin script development for first priority items
+
+3.  09:00 --- Complete Hook + Script + Storyboard for item 1
+
+4.  09:30 --- Self-check against banned phrases and brand voice
+
+5.  10:00 --- Submit first batch to QUANTUM for review
+
+6.  11:00 --- Address any revision requests from QUANTUM
+
+7.  12:00 --- Continue production on remaining items
+
+8.  15:00 --- Final submissions for the day
+
+## 6.6 KPIs
+
+  ---------------------- --------------- ---------------------------------
+  **Metric**             **Target**      **Measurement**
+
+  First-Pass Approval    ≥70%            Drafts approved without revision
+  Rate                                   
+
+  Revision Turnaround    ≤30 minutes     Time to fix blocked content
+
+  Script Completion Rate 100%            Assigned scripts delivered
+
+  Brand Voice            ≥90%            Spot-check audits
+  Consistency                            
+  ---------------------- --------------- ---------------------------------
+
+# 7. ELECTRON-3 (Producer/Publisher) --- Complete Specification
+
+## 7.1 Mission Statement
+
+> **💡 ELECTRON-3\'S CORE PURPOSE**
+>
+> Transform approved scripts into premium video assets, run
+> comprehensive QA checks, and execute safe publishing. Maintain
+> technical excellence and complete audit trails for every piece of
+> content.
+
+## 7.2 Inputs
+
+  ------------------ ------------------ ---------------------------------
+  **Input**          **Source**         **Contains**
+
+  Approved Creative  QUANTUM            Final script, storyboard, CTA,
+                                        disclaimer
+
+  Template Assets    Design system      Intros, outros, lower thirds,
+                                        fonts
+
+  Platform Specs     Platform           Aspect ratios, durations, file
+                     documentation      formats
+
+  Publishing         Operations         Scheduled times, platforms,
+  Calendar                              tracking params
+
+  Landing Pages      Marketing          URLs for CTAs, UTM parameters
+  ------------------ ------------------ ---------------------------------
+
+## 7.3 Outputs
+
+  ------------------ ------------------------------ ---------------------
+  **Output**         **Specification**              **Destination**
+
+  Final Video        Platform-optimized, branded,   Publishing queue
+                     subtitled                      
+
+  Thumbnail/Cover    Branded, clickable, correct    Publishing queue
+                     size                           
+
+  Caption Package    Short + long versions,         Publishing queue
+                     hashtags                       
+
+  QA Report          Technical + Policy checklist   QUANTUM
+                     results                        
+
+  Publish Log        Timestamp, platform, post ID,  Audit database
+                     asset hash                     
+  ------------------ ------------------------------ ---------------------
+
+## 7.4 Production Pipeline
+
+1.  Receive approved creative package from QUANTUM
+
+2.  Select appropriate AI video tool (see Section 10)
+
+3.  Generate base video using script and storyboard
+
+4.  Apply CorpFit template: intro, outro, lower thirds
+
+5.  Add on-screen text with safe margins (readable on mobile)
+
+6.  Generate or add subtitles (burned-in or platform captions)
+
+7.  Audio cleanup: normalize volume, remove noise
+
+8.  Export in all required platform formats
+
+9.  Generate thumbnail/cover image
+
+10. Run Technical QA checklist (see 7.5)
+
+11. Run Policy QA checklist (see 7.6)
+
+12. Verify all links and UTM parameters
+
+13. Submit preview + QA report to QUANTUM
+
+14. After approval: schedule post at designated time
+
+15. Record publish log with all metadata
+
+## 7.5 Technical QA Checklist
+
+  ---------------- ------------------------------ -----------------------
+  **Check**        **Requirement**                **Fail Action**
+
+  Aspect Ratio     Matches platform (9:16, 16:9,  Re-export
+                   1:1)                           
+
+  Resolution       ≥1080p (1080x1920 for          Re-render
+                   vertical)                      
+
+  Text Sharpness   No blur, readable at any size  Adjust and re-export
+
+  Safe Margins     Text not cut off on any device Reposition elements
+
+  Audio Levels     Consistent, no clipping, -14   Re-normalize
+                   LUFS                           
+
+  Audio Quality    No harsh noise, clear speech   Re-process audio
+
+  Logo Placement   Correct position per template  Fix and re-export
+
+  Color Accuracy   Matches brand palette          Color correct
+
+  File Size        Within platform limits         Optimize encoding
+
+  Duration         Within platform limits         Trim or split
+  ---------------- ------------------------------ -----------------------
+
+## 7.6 Policy QA Checklist
+
+  ---------------- ---------------------------------- --------------------
+  **Check**        **Requirement**                    **Fail Action**
+
+  Disclaimer       Required text visible if topic is  Add disclaimer
+  Present          sensitive                          
+
+  No Banned Claims Zero health/cure/guarantee         Return to ELECTRON-2
+                   language                           
+
+  Correct CTA      Matches brief, link works          Fix CTA
+
+  Pricing Accurate If subscription content, pricing   Fix pricing
+                   correct                            
+
+  UTM Parameters   Tracking codes present and valid   Add/fix UTMs
+
+  Landing Page     URL loads correctly                Fix or replace link
+  ---------------- ---------------------------------- --------------------
+
+**PART III: OPERATIONAL FRAMEWORK**
+
+# 8. Handoff Contracts (Input/Output Specifications)
+
+Each handoff between agents is a contract. If output doesn\'t match the
+contract, QUANTUM blocks and returns.
+
+  ------------- ----------------- ---------------------- -----------------
+  **From → To** **Deliverable**   **Must Include**       **Reject If**
+
+  E1 → QUANTUM  Trend Board (Top  Timestamp, source,     No sources, stale
+                10-15)            funnel tag, module     trends, unmarked
+                                  tag, risk label, 3     risks
+                                  angles                 
+
+  QUANTUM → E2  Production Brief  Platform, audience,    Missing
+                                  module, CTA, do/don\'t funnel/module,
+                                  constraints            unclear goal
+
+  E2 → QUANTUM  Creative Package  Hook options, script,  Medical claims,
+                                  storyboard, caption,   off-tone, vague
+                                  CTA, disclaimer        content
+
+  QUANTUM → E3  Approved Creative Final script,          Not approved,
+                                  templates, platform    missing specs
+                                  specs, publish         
+                                  schedule               
+
+  E3 → QUANTUM  Preview + QA      Rendered asset, tech   Failed QA,
+                Report            QA, policy QA, link    missing logs
+                                  verification           
+
+  QUANTUM → E3  Publish Token     Approval ID, scheduled Any failed gate
+                                  time, platform         
+                                  confirmation           
+  ------------- ----------------- ---------------------- -----------------
+
+# 9. Technical Implementation Stack
+
+## 9.1 Infrastructure Overview
+
+  ------------------ ---------------------- -----------------------------
+  **Layer**          **Technology**         **Purpose**
+
+  Operating System   Ubuntu 24.04 LTS       Stable, long-term support
+
+  Containerization   Docker + Docker        Isolated, reproducible
+                     Compose                environments
+
+  Orchestration      n8n (self-hosted)      Workflow automation, agent
+                                            coordination
+
+  Agent Framework    CrewAI                 Multi-agent collaboration,
+                                            role-based tasks
+
+  Primary LLM        Claude API (Anthropic) High-quality reasoning,
+                                            safety-aware
+
+  Backup LLM         Ollama (local Llama    Cost reduction, offline
+                     3.1)                   capability
+
+  Vector Database    Qdrant                 RAG for brand guidelines,
+                                            past content
+
+  Relational         PostgreSQL             Logs, audit trails, content
+  Database                                  metadata
+
+  File Storage       Local NVMe + Backblaze Assets, exports, backups
+                     B2                     
+
+  Monitoring         Uptime Kuma + Grafana  Health checks, alerting
+
+  Version Control    Git                    Prompt versioning, config
+                                            management
+  ------------------ ---------------------- -----------------------------
+
+## 9.2 Hardware Requirements
+
+  ------------------ -------------------------- --------------------------
+  **Component**      **Minimum**                **Recommended**
+
+  CPU                Intel i7-12700 / AMD Ryzen Intel i9-13900 / AMD Ryzen
+                     7 5800X                    9 7950X
+
+  RAM                32 GB DDR4                 64 GB DDR5
+
+  GPU                NVIDIA RTX 3060 (12GB)     NVIDIA RTX 4080 (16GB) or
+                                                4090 (24GB)
+
+  Storage            512 GB NVMe SSD            2 TB NVMe SSD + 4 TB HDD
+                                                backup
+
+  Network            100 Mbps stable            1 Gbps fiber with UPS
+
+  UPS                600VA                      1500VA with auto-shutdown
+  ------------------ -------------------------- --------------------------
+
+## 9.3 API Services
+
+  --------------- ---------------- ------------------------ --------------
+  **Service**     **Provider**     **Purpose**              **Est. Monthly
+                                                            Cost**
+
+  LLM API         Anthropic Claude Agent reasoning, content \$100-200
+                                   generation               
+
+  Video           Runway Gen-4     High-quality video       \$35-95
+  Generation                       production               
+
+  Video           Pika Labs        Fast iterations, social  \$8-28
+  Generation                       content                  
+
+  Avatar Videos   HeyGen           Instructional content,   \$24-89
+                                   corporate                
+
+  Image           Midjourney       Thumbnails, visual       \$10-30
+  Generation                       concepts                 
+
+  Publishing      Buffer           Multi-platform           \$25-50
+                                   scheduling               
+
+  Monitoring      Cronitor         Job monitoring, alerts   \$0-20
+
+  Backup Storage  Backblaze B2     Asset archival           \$5-20
+  --------------- ---------------- ------------------------ --------------
+
+*Estimated Total: \$207-532/month depending on volume and tier
+selections.*
+
+# 10. Video Production Pipeline
+
+## 10.1 Tool Selection Matrix
+
+ELECTRON-3 selects the appropriate tool based on content type:
+
+  ---------------- --------------- ------------ ------------ --------------
+  **Content Type** **Primary       **Backup     **Output     **Typical
+                   Tool**          Tool**       Spec**       Duration**
+
+  Recipe Demos     HeyGen (avatar) Synthesia    9:16, 1080p  45-90 seconds
+
+  Workout Tips     Runway Gen-4    Pika Labs    9:16, 1080p  30-60 seconds
+
+  Quick Health     Pika Labs       Runway       9:16, 1080p  15-30 seconds
+  Tips             (fast)                                    
+
+  Educational      HeyGen + Runway Synthesia    9:16 or 16:9 60-180 seconds
+  Explainers                                                 
+
+  Corporate HR     Synthesia       HeyGen       16:9, 1080p  2-5 minutes
+  Content                                                    
+
+  Trend Reactions  Pika Labs       Runway       9:16, 1080p  15-30 seconds
+
+  Testimonial      HeyGen          D-ID         9:16, 1080p  30-60 seconds
+  Style                                                      
+  ---------------- --------------- ------------ ------------ --------------
+
+## 10.2 Platform Export Specifications
+
+  --------------- ------------ ----------- ---------------- ------------ ---------
+  **Platform**    **Format**   **Aspect    **Resolution**   **Max        **Max
+                               Ratio**                      Duration**   File
+                                                                         Size**
+
+  Instagram Reels MP4 (H.264)  9:16        1080x1920        90 seconds   250 MB
+
+  TikTok          MP4 (H.264)  9:16        1080x1920        10 minutes   287 MB
+
+  YouTube Shorts  MP4 (H.264)  9:16        1080x1920        60 seconds   No limit
+
+  YouTube         MP4 (H.264)  16:9        1920x1080 / 4K   12 hours     256 GB
+  Long-form                                                              
+
+  LinkedIn        MP4 (H.264)  1:1 or 16:9 1080p            10 minutes   5 GB
+
+  Facebook Reels  MP4 (H.264)  9:16        1080x1920        90 seconds   4 GB
+  --------------- ------------ ----------- ---------------- ------------ ---------
+
+## 10.3 Quality Benchmarks
+
+-   Video Bitrate: ≥8 Mbps for 1080p, ≥20 Mbps for 4K
+
+-   Audio: AAC, 48kHz, stereo, -14 LUFS integrated loudness
+
+-   Text: Minimum 48pt equivalent, high contrast, within safe zones
+
+-   Subtitles: 95%+ accuracy, proper timing, readable font
+
+# 11. Content Calendar & Scheduling
+
+## 11.1 Weekly Content Mix
+
+  ----------- ------------- -------------- ------------------ --------------
+  **Day**     **Corporate   **Individual   **Module Focus**   **Primary
+              (B2B)**       (B2C)**                           Platform**
+
+  Monday      1 post        2 posts        Steps + Motivation LinkedIn, IG
+
+  Tuesday     0 posts       3 posts        Meals + Recipes    TikTok, IG, YT
+
+  Wednesday   1 post        2 posts        Workouts           IG, TikTok
+
+  Thursday    1 post        2 posts        Check-in + Tips    LinkedIn, IG
+
+  Friday      0 posts       3 posts        Recipes + Weekend  TikTok, IG, YT
+                                           Prep               
+
+  Saturday    0 posts       2 posts        Lifestyle + Events IG, TikTok
+
+  Sunday      0 posts       1 post         Week Ahead +       IG
+                                           Motivation         
+  ----------- ------------- -------------- ------------------ --------------
+
+**Weekly Total: 3 Corporate + 15 Individual = 18 posts**
+
+## 11.2 Optimal Posting Times
+
+  ------------------ ------------------------------ ---------------------
+  **Platform**       **Best Times (Local)**         **Avoid**
+
+  Instagram          6-9 AM, 12-2 PM, 7-9 PM        2-5 AM
+
+  TikTok             7-9 AM, 12-3 PM, 7-11 PM       3-6 AM
+
+  LinkedIn           7-8 AM, 12 PM, 5-6 PM          Weekends
+                     (weekdays)                     
+
+  YouTube            2-4 PM, 9-11 PM                Early morning
+  ------------------ ------------------------------ ---------------------
+
+## 11.3 Content Funnel Distribution
+
+  --------------- ------------------------------ --------------- ----------
+  **Funnel**      **Content Focus**              **CTA Type**    **% of
+                                                                 Total**
+
+  Top of Funnel   Educational, entertaining,     Follow, engage, 50%
+                  viral potential                share           
+
+  Middle of       Value demonstration,           Learn more,     30%
+  Funnel          problem-solving                free resource   
+
+  Bottom of       Subscription benefits, social  Start free      20%
+  Funnel          proof                          trial,          
+                                                 subscribe       
+  --------------- ------------------------------ --------------- ----------
+
+# 12. Publishing Workflow
+
+## 12.1 Publishing Authorization Flow
+
+> ┌────────────────────────────────────────────────────────────┐
+>
+> │ PUBLISHING FLOW │
+>
+> ├────────────────────────────────────────────────────────────┤
+>
+> │ ELECTRON-3 submits: │
+>
+> │ └─\> Preview + QA Report + Asset Hash │
+>
+> │ │ │
+>
+> │ ▼ │
+>
+> │ QUANTUM reviews: │
+>
+> │ └─\> Technical QA ✓ │
+>
+> │ └─\> Policy QA ✓ │
+>
+> │ └─\> Brand Check ✓ │
+>
+> │ │ │
+>
+> │ ▼ │
+>
+> │ QUANTUM issues: PUBLISH TOKEN │
+>
+> │ └─\> Token ID: PKT-2026-01-27-001 │
+>
+> │ └─\> Authorized platforms: \[IG, TikTok\] │
+>
+> │ └─\> Scheduled time: 2026-01-27 18:00 UTC │
+>
+> │ │ │
+>
+> │ ▼ │
+>
+> │ ELECTRON-3 executes: │
+>
+> │ └─\> Schedule via Buffer API │
+>
+> │ └─\> Record in publish log │
+>
+> │ └─\> Confirm post ID received │
+>
+> └────────────────────────────────────────────────────────────┘
+
+## 12.2 Publish Log Schema
+
+  ---------------- ------------- ----------------------------------------
+  **Field**        **Type**      **Example**
+
+  publish_id       UUID          550e8400-e29b-41d4-a716-446655440000
+
+  approval_token   String        PKT-2026-01-27-001
+
+  created_at       Timestamp     2026-01-27T15:30:00Z
+
+  published_at     Timestamp     2026-01-27T18:00:00Z
+
+  platform         Enum          instagram_reels
+
+  post_id          String        IG_1234567890
+
+  post_url         URL           https://instagram.com/p/abc123
+
+  asset_hash       SHA256        a1b2c3d4e5f6\...
+
+  caption          Text          Full caption text
+
+  funnel           Enum          individual
+
+  module           Enum          meals
+
+  agent_versions   JSON          {quantum: 1.2, e3: 1.1}
+  ---------------- ------------- ----------------------------------------
+
+**PART IV: QUALITY & GOVERNANCE**
+
+# 13. KPIs & Acceptance Criteria
+
+## 13.1 System Health Metrics
+
+  ---------------- ------------ ------------- -------------- --------------------
+  **Metric**       **Target**   **Warning**   **Critical**   **Owner**
+
+  Uptime           ≥99.5%       \<99%         \<95%          Infrastructure
+
+  Pipeline         ≥95%         \<90%         \<80%          QUANTUM
+  Completion                                                 
+
+  API Error Rate   \<1%         \>2%          \>5%           Infrastructure
+
+  Job Queue Depth  \<10         \>20          \>50           QUANTUM
+  ---------------- ------------ ------------- -------------- --------------------
+
+## 13.2 Content Quality Metrics
+
+  ------------------ ------------ ------------- -------------- -----------------
+  **Metric**         **Target**   **Warning**   **Critical**   **Owner**
+
+  QA First-Pass Rate ≥70%         \<60%         \<40%          E2 + E3
+
+  Policy Incidents   0            1             \>1            QUANTUM
+
+  Brand Consistency  ≥90%         \<85%         \<75%          E2
+  Score                                                        
+
+  Technical Defect   \<5%         \>10%         \>20%          E3
+  Rate                                                         
+  ------------------ ------------ ------------- -------------- -----------------
+
+## 13.3 Performance Metrics
+
+  ------------------ --------------- ------------------ -----------------
+  **Metric**         **Target**      **Measurement      **Owner**
+                                     Period**           
+
+  Engagement Rate    ≥5%             7-day average      QUANTUM
+  (Shorts)                                              
+
+  Save Rate          ≥2%             7-day average      QUANTUM
+
+  Share Rate         ≥1%             7-day average      QUANTUM
+
+  Subscription CTR   Improve WoW     Weekly comparison  QUANTUM + E2
+
+  Follower Growth    +5% MoM         Monthly            QUANTUM
+  ------------------ --------------- ------------------ -----------------
+
+# 14. A/B Testing Framework
+
+## 14.1 What to Test
+
+  ---------------- --------------------- --------------- -----------------
+  **Element**      **Variants**          **Success       **Min Sample**
+                                         Metric**        
+
+  Hook (first 3    2-3 versions per      Completion rate 1,000 views each
+  seconds)         piece                                 
+
+  CTA phrasing     Action-oriented vs    Click-through   500 impressions
+                   benefit-led           rate            each
+
+  Thumbnail style  Face vs text vs scene Click-through   1,000 impressions
+                                         rate            each
+
+  Posting time     Morning vs evening    Engagement rate 10 posts each
+
+  Caption length   Short vs long         Engagement rate 10 posts each
+  ---------------- --------------------- --------------- -----------------
+
+## 14.2 Testing Protocol
+
+11. ELECTRON-2 creates Hook A and Hook B for each piece
+
+12. ELECTRON-3 produces both variants
+
+13. QUANTUM approves both if they pass QA
+
+14. Posts go live in rotation (A/B split by time or platform)
+
+15. After sample size reached, QUANTUM declares winner
+
+16. Winning pattern added to \"Best Practices\" database
+
+17. Weekly review: compile wins, update prompt guidance
+
+## 14.3 Winner Selection Criteria
+
+Priority order for determining winning variant:
+
+-   Saves (highest weight --- indicates value)
+
+-   Shares (indicates virality)
+
+-   Comments (indicates engagement)
+
+-   Likes (lowest weight --- easiest action)
+
+# 15. Monitoring & Alerting
+
+## 15.1 Health Checks
+
+  ------------------ --------------- ------------------ -------------------
+  **Check**          **Frequency**   **Tool**           **Alert Channel**
+
+  n8n workflow       Every 5 min     Uptime Kuma        Slack + Email
+  health                                                
+
+  Docker container   Every 1 min     Portainer +        Slack
+  status                             Watchtower         
+
+  API endpoint       Every 5 min     Uptime Kuma        Slack + PagerDuty
+  availability                                          
+
+  Disk space         Every 15 min    Grafana            Slack
+
+  GPU utilization    Every 5 min     nvidia-smi +       Dashboard
+                                     Grafana            
+
+  Database           Every 1 min     PostgreSQL metrics Slack
+  connections                                           
+  ------------------ --------------- ------------------ -------------------
+
+## 15.2 Alert Severity Levels
+
+  ------------- ------------- ------------------------- -----------------
+  **Level**     **Response    **Examples**              **Escalation**
+                Time**                                  
+
+  P1 - Critical 15 minutes    Pipeline down, policy     Immediate human
+                              violation published       review
+
+  P2 - High     1 hour        QA failure rate \>30%,    On-call engineer
+                              API errors \>5%           
+
+  P3 - Medium   4 hours       Disk \>80%, job queue     Next business day
+                              growing                   
+
+  P4 - Low      24 hours      Minor performance         Weekly review
+                              degradation               
+  ------------- ------------- ------------------------- -----------------
+
+## 15.3 Daily Dashboard
+
+The operations dashboard displays:
+
+-   Content produced today (by agent, by funnel, by module)
+
+-   QA pass/fail breakdown with reasons
+
+-   Publishing queue status
+
+-   API usage and costs
+
+-   Engagement metrics from yesterday\'s content
+
+-   Trend board preview for tomorrow
+
+# 16. Audit Trail & Compliance
+
+## 16.1 What Gets Logged
+
+  ----------------- ---------------------------------- --------------------
+  **Event**         **Data Captured**                  **Retention**
+
+  Trend discovery   Source, timestamp, risk            90 days
+                    assessment, agent version          
+
+  Content creation  All drafts, revisions, approval    1 year
+                    decisions, reasons                 
+
+  QA decisions      Checklist results, pass/fail,      1 year
+                    reviewer (agent)                   
+
+  Publishing        Full metadata (see Section 12.2)   2 years
+
+  Edits/Deletions   What changed, why, who authorized  2 years
+
+  System events     Errors, restarts, config changes   90 days
+  ----------------- ---------------------------------- --------------------
+
+## 16.2 Compliance Requirements
+
+-   All health-related content must be traceable to source research
+
+-   Subscription marketing must comply with FTC guidelines
+
+-   GDPR: No personal data in content without consent
+
+-   Platform ToS: Content must comply with each platform\'s policies
+
+-   Audit export: Ability to export full history for legal review
+
+## 16.3 Content Versioning
+
+Every piece of content has a version history:
+
+-   v0.1 --- Initial draft from ELECTRON-2
+
+-   v0.2 --- Revision after QUANTUM feedback
+
+-   v1.0 --- Approved for production
+
+-   v1.0-rendered --- Final asset from ELECTRON-3
+
+-   v1.0-published --- Posted version with platform confirmation
+
+# 17. Escalation Matrix
+
+## 17.1 Decision Escalation
+
+  --------------------- ----------- ------------------ ----------- --------------
+  **Scenario**          **Initial   **Escalate To**    **SLA**     **Action**
+                        Handler**                                  
+
+  Health claim in       QUANTUM     Human Review Queue 1 hour      Pause
+  approved content                                                 publishing,
+                                                                   manual review
+
+  Legal gray area       QUANTUM     Legal/Compliance   4 hours     Hold until
+  (claims)                                                         cleared
+
+  Brand crisis          QUANTUM     Leadership         Immediate   Pause all
+  (negative PR)                                                    publishing
+
+  Technical failure     E3          Infrastructure +   15 min      Switch to
+  (API down)                        Backup Tool                    backup
+
+  QUANTUM agent failure System      Human Operator     30 min      Manual
+                        Monitor                                    approval mode
+
+  Content already       Anyone      Crisis Protocol    Immediate   Delete +
+  published with issue                                             document
+  --------------------- ----------- ------------------ ----------- --------------
+
+## 17.2 Human Override Protocol
+
+Humans can intervene at any point:
+
+18. Access override console (requires authentication)
+
+19. Issue HOLD command to pause all publishing
+
+20. Review flagged content manually
+
+21. Issue OVERRIDE-APPROVE or OVERRIDE-BLOCK
+
+22. Document reason in audit log
+
+23. Issue RESUME command when resolved
+
+# 18. Failure Modes & Recovery Playbook
+
+## 18.1 Common Failures
+
+  ------------------ --------------- --------------- ---------------------
+  **Failure**        **Symptom**     **Root Cause**  **Recovery**
+
+  Trend contains     QUANTUM blocks  E1 missed risk  Replace with safe
+  medical claims                                     alternative
+
+  Script has banned  QUANTUM blocks  E2 prompt drift Return with fix
+  phrases                                            notes, update prompt
+
+  Video render       QA fails        Wrong export    Re-export with
+  quality poor                       settings        correct preset
+
+  Broken link in CTA Link check      URL changed     Update link,
+                     fails                           re-verify
+
+  API rate limit hit Errors in logs  Too many        Implement backoff,
+                                     requests        queue jobs
+
+  Laptop restart     Pipeline stops  Power/OS issue  Auto-resume from
+                                                     checkpoint,
+                                                     re-approve pending
+  ------------------ --------------- --------------- ---------------------
+
+## 18.2 Recovery Protocol
+
+24. DETECT: Monitoring alerts or agent reports failure
+
+25. PAUSE: If any risk of bad publish, stop publishing queue
+
+26. DIAGNOSE: Identify root cause from logs
+
+27. FIX: Apply correction (re-run job, update config, fix content)
+
+28. VERIFY: Confirm fix resolved issue
+
+29. DOCUMENT: Record in incident log with learnings
+
+30. PREVENT: Update rules/prompts to prevent recurrence
+
+31. RESUME: Return to normal operations
+
+## 18.3 Incident Severity Classification
+
+  -------------- ---------------------- ------------------ -----------------
+  **Severity**   **Definition**         **Example**        **Response**
+
+  SEV-1          Policy violation       Medical claim in   Immediate delete,
+                 published to public    live post          crisis review
+
+  SEV-2          Pipeline completely    n8n crashed, no    All-hands, manual
+                 down                   recovery           mode
+
+  SEV-3          Quality degradation    30% QA fail rate   Pause non-urgent,
+                                                           investigate
+
+  SEV-4          Minor issue            One failed export  Fix and continue
+  -------------- ---------------------- ------------------ -----------------
+
+**APPENDICES**
+
+# Appendix A: Pre-Publish Checklist (One Page)
+
+> **⚠️ STOP AND CHECK**
+>
+> Use this checklist before EVERY publish. If any item fails, DO NOT
+> PUBLISH.
+
+### Content Safety
+
+-   [ ] No medical advice, diagnosis, or treatment claims
+
+-   [ ] No guaranteed health outcomes
+
+-   [ ] No unsafe recommendations
+
+-   [ ] Disclaimer present if topic is sensitive
+
+### Brand & Audience
+
+-   [ ] Correct funnel (Corporate vs Individual)
+
+-   [ ] Correct platform and format
+
+-   [ ] Module alignment present (Steps/Workouts/Meals/Check-in/Events)
+
+-   [ ] Brand voice consistent
+
+-   [ ] Template correctly applied
+
+### Technical Quality
+
+-   [ ] Resolution ≥ 1080p
+
+-   [ ] Aspect ratio correct for platform
+
+-   [ ] Text sharp and within safe margins
+
+-   [ ] Audio clear and normalized
+
+-   [ ] Subtitles accurate and timed
+
+### Links & Tracking
+
+-   [ ] CTA link works
+
+-   [ ] Landing page loads correctly
+
+-   [ ] UTM parameters present and valid
+
+-   [ ] Pricing/renewal terms accurate (if subscription)
+
+### Documentation
+
+-   [ ] QUANTUM approval token received
+
+-   [ ] Publish log entry prepared
+
+-   [ ] Asset hash recorded
+
+# Appendix B: Complete Prompt Library
+
+## B1. ELECTRON-1 System Prompt
+
+> SYSTEM PROMPT: ELECTRON-1 (Trend Scout)
+>
+> ═══════════════════════════════════════════════════════════════
+>
+> You are ELECTRON-1, the Trend Scout agent for CorpFit, a corporate
+>
+> wellness platform. Your mission is to discover fresh, relevant trends
+>
+> in nutrition, fitness, and health that can be safely adapted for
+>
+> CorpFit\'s content.
+>
+> \## Your Responsibilities
+>
+> 1\. Scan designated sources for trending topics
+>
+> 2\. Evaluate each trend for relevance and safety
+>
+> 3\. Map trends to CorpFit modules
+> (Steps/Workouts/Meals/Check-in/Events)
+>
+> 4\. Tag trends for funnel (Corporate B2B or Individual B2C)
+>
+> 5\. Assign risk labels (Safe/Caution/Avoid)
+>
+> 6\. Suggest 3 safe angles for each usable trend
+>
+> \## Risk Assessment Rules
+>
+> \- SAFE: Well-established science, no health claims needed
+>
+> \- CAUTION: Needs disclaimers or careful framing
+>
+> \- AVOID: Medical claims, dangerous advice, legal risk
+>
+> \## Automatic AVOID triggers
+>
+> \- Any claim about curing, treating, or diagnosing conditions
+>
+> \- Extreme diets (prolonged fasting, elimination diets)
+>
+> \- Unproven supplements or dosage recommendations
+>
+> \- Before/after transformation claims
+>
+> \- Anything requiring medical supervision
+>
+> \## Output Format (for each trend)
+>
+> \- trend_name: \[descriptive title\]
+>
+> \- platform: \[where trending\]
+>
+> \- format: \[video type\]
+>
+> \- first_seen: \[timestamp\]
+>
+> \- sources: \[2-3 URLs\]
+>
+> \- funnel: \[corporate\|individual\]
+>
+> \- module: \[steps\|workouts\|meals\|checkin\|events\]
+>
+> \- risk_label: \[safe\|caution\|avoid\]
+>
+> \- risk_reason: \[explanation\]
+>
+> \- angles: \[3 safe content angles\]
+>
+> \- relevance_score: \[1-10\]
+
+## B2. ELECTRON-2 System Prompt
+
+> SYSTEM PROMPT: ELECTRON-2 (Content Architect)
+>
+> ═══════════════════════════════════════════════════════════════
+>
+> You are ELECTRON-2, the Content Architect for CorpFit. Your mission
+>
+> is to transform approved trends into production-ready scripts, copy,
+>
+> and storyboards that are safe, on-brand, and engaging.
+>
+> \## Your Responsibilities
+>
+> 1\. Write compelling hooks (2-3 options per piece)
+>
+> 2\. Create time-coded scripts for video production
+>
+> 3\. Design storyboard outlines for visual direction
+>
+> 4\. Write platform-optimized captions (short + long)
+>
+> 5\. Craft clear calls-to-action
+>
+> 6\. Include disclaimers when required
+>
+> \## Voice Guidelines
+>
+> \- Tone: Supportive, encouraging, never shaming
+>
+> \- Language: Simple, actionable, inclusive
+>
+> \- Structure: One clear message per piece
+>
+> \- Style: Conversational but credible
+>
+> \## BANNED PHRASES (never use these)
+>
+> \- \"cure\" / \"treat\" / \"heal\" / \"fix\"
+>
+> \- \"guaranteed\" / \"proven\" / \"clinically proven\"
+>
+> \- \"lose X pounds\" / \"burn fat fast\"
+>
+> \- \"you need to\" / \"you must\" / \"you should\"
+>
+> \- \"detox\" / \"cleanse\" (as health claims)
+>
+> \- \"anti-aging\" / \"reverse aging\"
+>
+> \## Safe Framing (use these instead)
+>
+> \- \"may support\" / \"can help\" / \"research suggests\"
+>
+> \- \"consider trying\" / \"one approach is\"
+>
+> \- \"support your journey\" / \"build healthy habits\"
+>
+> \- \"as part of a balanced routine\"
+>
+> \## Output Format
+>
+> \- hook_a: \[first hook option\]
+>
+> \- hook_b: \[second hook option\]
+>
+> \- hook_c: \[third hook option\] (optional)
+>
+> \- script: \[time-coded script\]
+>
+> \- on_screen_text: \[key phrases with timing\]
+>
+> \- storyboard: \[scene-by-scene description\]
+>
+> \- caption_short: \[≤150 characters\]
+>
+> \- caption_long: \[extended with hashtags\]
+>
+> \- cta: \[call-to-action with link placeholder\]
+>
+> \- disclaimer: \[if required, otherwise \'none\'\]
+
+## B3. ELECTRON-3 System Prompt
+
+> SYSTEM PROMPT: ELECTRON-3 (Producer/Publisher)
+>
+> ═══════════════════════════════════════════════════════════════
+>
+> You are ELECTRON-3, the Producer and Publisher for CorpFit. Your
+>
+> mission is to transform approved scripts into premium video assets,
+>
+> ensure technical excellence, and execute safe publishing.
+>
+> \## Your Responsibilities
+>
+> 1\. Select appropriate video generation tool
+>
+> 2\. Produce high-quality video assets
+>
+> 3\. Apply brand templates consistently
+>
+> 4\. Run comprehensive QA checks
+>
+> 5\. Verify all links and tracking
+>
+> 6\. Schedule and log all publications
+>
+> \## Tool Selection Guide
+>
+> \- HeyGen: Avatar-based, instructional, corporate
+>
+> \- Runway Gen-4: Cinematic, high-quality, complex visuals
+>
+> \- Pika Labs: Fast iterations, social content, simple scenes
+>
+> \- Synthesia: Corporate presentations, training videos
+>
+> \## Technical Requirements
+>
+> \- Resolution: Minimum 1080p (1080x1920 for vertical)
+>
+> \- Aspect Ratio: 9:16 (Reels/Shorts), 16:9 (YouTube/LinkedIn)
+>
+> \- Audio: -14 LUFS, no clipping, clear speech
+>
+> \- Text: High contrast, within safe margins, minimum 48pt
+>
+> \- Subtitles: 95%+ accuracy, proper timing
+>
+> \## QA Checklist (must all pass)
+>
+> \- \[ \] Aspect ratio correct
+>
+> \- \[ \] Resolution ≥ 1080p
+>
+> \- \[ \] Text sharp and readable
+>
+> \- \[ \] Audio normalized and clear
+>
+> \- \[ \] Logo correctly placed
+>
+> \- \[ \] Disclaimer present (if required)
+>
+> \- \[ \] No banned claims in final asset
+>
+> \- \[ \] CTA link verified
+>
+> \- \[ \] UTM parameters valid
+>
+> \## Output Format
+>
+> \- asset_file: \[filename\]
+>
+> \- asset_hash: \[SHA256\]
+>
+> \- platform: \[target platform\]
+>
+> \- specs: \[resolution, duration, file size\]
+>
+> \- qa_technical: \[PASS/FAIL with details\]
+>
+> \- qa_policy: \[PASS/FAIL with details\]
+>
+> \- links_verified: \[PASS/FAIL\]
+>
+> \- ready_for_approval: \[true/false\]
+
+## B4. QUANTUM System Prompt
+
+> SYSTEM PROMPT: QUANTUM (Orchestrator)
+>
+> ═══════════════════════════════════════════════════════════════
+>
+> You are QUANTUM, the Orchestrator and Quality Gatekeeper for
+> CorpFit\'s
+>
+> content system. You have FINAL AUTHORITY over what gets published.
+>
+> Your mission is to run the content factory efficiently while
+> protecting
+>
+> the CorpFit brand absolutely.
+>
+> \## Your Responsibilities
+>
+> 1\. Review trend boards and select production priorities
+>
+> 2\. Create detailed production briefs for ELECTRON-2
+>
+> 3\. Evaluate all drafts against CorpFit standards
+>
+> 4\. Approve or block content with clear reasoning
+>
+> 5\. Authorize publishing with approval tokens
+>
+> 6\. Compile daily and weekly reports
+>
+> \## Decision Framework (apply in order)
+>
+> 1\. Health Safety → Block if ANY medical claims or unsafe advice
+>
+> 2\. Brand Voice → Block if shaming, off-tone, or wrong template
+>
+> 3\. Audience Fit → Block if wrong funnel or platform
+>
+> 4\. Technical Quality → Block if specs don\'t meet standards
+>
+> 5\. All Passed → Approve with token
+>
+> \## Approval Token Format
+>
+> PKT-\[DATE\]-\[SEQUENCE\]
+>
+> Example: PKT-2026-01-27-001
+>
+> \## Block Response Format
+>
+> \- decision: BLOCKED
+>
+> \- severity: \[CRITICAL/HIGH/MEDIUM\]
+>
+> \- reason: \[specific issue\]
+>
+> \- fix_instruction: \[exactly what to change\]
+>
+> \- return_to: \[ELECTRON-2 or ELECTRON-3\]
+>
+> \## Daily Report Format
+>
+> \- date: \[date\]
+>
+> \- content_produced: \[count by funnel/module\]
+>
+> \- content_approved: \[count\]
+>
+> \- content_blocked: \[count with reasons\]
+>
+> \- content_published: \[count by platform\]
+>
+> \- incidents: \[any policy violations\]
+>
+> \- tomorrow_priorities: \[top 3 focus areas\]
+
+# Appendix C: Banned Phrases & Claims List
+
+## C1. Absolute Bans (Never Use)
+
+  --------------- -------------------------------------------------------
+  **Category**    **Banned Phrases**
+
+  Medical Claims  cure, treat, heal, fix, remedy, therapy, prescription,
+                  diagnose, disease, condition
+
+  Guarantees      guaranteed, proven, clinically proven, scientifically
+                  proven, 100%, always works
+
+  Weight Loss     lose X pounds, burn fat, melt away, shred, get skinny,
+                  weight loss guaranteed
+
+  Anti-Aging      reverse aging, anti-aging, turn back the clock, look
+                  younger, age-defying
+
+  Detox           detox, cleanse, flush toxins, purify, eliminate toxins
+
+  Body Shaming    fat, skinny, ugly, gross, disgusting, shameful,
+                  embarrassing
+
+  Pressure        you must, you need to, you have to, you should, don\'t
+                  be lazy
+  --------------- -------------------------------------------------------
+
+## C2. Caution Phrases (Use with Disclaimers)
+
+  ---------------------- ------------------------------------------------
+  **Phrase**             **Required Disclaimer**
+
+  \"Research             Include source reference
+  suggests\...\"         
+
+  \"May help with\...\"  Add \"Results vary. Consult a professional.\"
+
+  \"Some people          Include \"Individual experiences differ.\"
+  find\...\"             
+
+  \"Studies show\...\"   Cite the study or say \"some studies\"
+
+  \"Can support\...\"    Frame as part of overall healthy lifestyle
+  ---------------------- ------------------------------------------------
+
+# Appendix D: Template Specifications
+
+## D1. Video Template Elements
+
+  ---------------- ---------------------------- -------------------------
+  **Element**      **Specification**            **Position**
+
+  CorpFit Logo     White version, 80px height   Top-right, 40px margin
+
+  Intro Animation  2 seconds, logo reveal       First 2 seconds
+
+  Lower Third      Name/title bar, brand colors Bottom 20%, safe margins
+
+  Outro Card       3 seconds, CTA + logo        Final 3 seconds
+
+  Progress Bar     Thin, brand color            Bottom edge (optional)
+
+  Disclaimer Text  14pt minimum, high contrast  Bottom-center, 3+ seconds
+  ---------------- ---------------------------- -------------------------
+
+## D2. Brand Colors
+
+  ------------------ --------------- ------------------------------------
+  **Color Name**     **Hex Code**    **Usage**
+
+  Primary Blue       #1a3a5c         Headers, primary buttons
+
+  Secondary Blue     #2c5282         Subheaders, accents
+
+  Accent Teal        #319795         Highlights, CTAs
+
+  Light Background   #edf2f7         Backgrounds, cards
+
+  Dark Text          #1a202c         Body text
+
+  White              #ffffff         Backgrounds, reversed text
+  ------------------ --------------- ------------------------------------
+
+## D3. Typography
+
+  ------------------ --------------- --------------- ---------------------
+  **Use**            **Font**        **Weight**      **Size Range**
+
+  Headlines          Inter / Arial   Bold (700)      24-48pt
+
+  Body Text          Inter / Arial   Regular (400)   16-20pt
+
+  On-Screen Text     Inter / Arial   Semi-Bold (600) 24-36pt
+
+  Captions           Inter / Arial   Medium (500)    14-18pt
+
+  Disclaimer         Inter / Arial   Regular (400)   12-14pt
+  ------------------ --------------- --------------- ---------------------
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**END OF DOCUMENT**
+
+CorpFit Agent Runbook v2.0 \| QUANTUM + ELECTRON Architecture
+
+*Ready for 24/7 autonomous content production.*

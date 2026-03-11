@@ -1,0 +1,374 @@
+**CORPFIT QUANTUM AI**
+
+**Production Deployment Checklist**
+
+Version 1.0 --- March 2026
+
+1\. Infrastructure Verification
+
+Verify all core infrastructure components are running and accessible.
+
+1.1 Docker Containers
+
+  ------- -------------- ---------- -------------------- -----------------------
+  **☐**   **Service**    **Port**   **Health Check**     **Restart Policy**
+
+  ☐       n8n            :5678      GET /healthz         unless-stopped
+
+  ☐       PostgreSQL     :5432      pg_isready           unless-stopped
+
+  ☐       Qdrant         :6333      GET /collections     unless-stopped
+
+  ☐       Ollama         :11434     GET /api/tags        unless-stopped
+
+  ☐       Open WebUI     :3000      HTTP 200             unless-stopped
+
+  ☐       Portainer      :9000      HTTP 200             unless-stopped
+  ------- -------------- ---------- -------------------- -----------------------
+
+1.2 External Endpoints
+
+  ------- -------------- ----------------------------------------------- ------------------------
+  **☐**   **Endpoint**   **URL**                                         **Expected Response**
+
+  ☐       Main Site      corpfit.cloud                                   HTTP 200
+
+  ☐       n8n Console    n8n.corpfit.cloud                               Login page
+
+  ☐       Dashboard      dashboard.corpfit.cloud                         Dashboard UI
+
+  ☐       Dashboard API  dashboard.corpfit.cloud/webhook/dashboard-api   JSON stats
+
+  ☐       Analytics      dashboard.corpfit.cloud/analytics               Charts page
+  ------- -------------- ----------------------------------------------- ------------------------
+
+1.3 Cloudflare Tunnel
+
+  ------- ---------------------------- -------------------------------------
+  **☐**   **Check**                    **Expected**
+
+  ☐       Tunnel UUID                  91611db9
+
+  ☐       Auto-start on boot           systemd service enabled
+
+  ☐       Routes configured            corpfit.cloud, n8n.corpfit.cloud,
+                                       dashboard.corpfit.cloud
+
+  ☐       SSL/TLS                      Full (strict) mode
+  ------- ---------------------------- -------------------------------------
+
+2\. Database Integrity
+
+2.1 Core Tables
+
+  ------- ---------------- ----------------------- -----------------------------
+  **☐**   **Table**        **Purpose**             **Expected State**
+
+  ☐       trends           E1 trend discoveries    260+ rows
+
+  ☐       content_briefs   QUANTUM-planned briefs  130+ rows
+
+  ☐       content_logs     E2 generated content    100+ rows, cost tracking
+                                                   columns
+
+  ☐       publish_logs     E3 video production     9+ rows
+
+  ☐       schedule_logs    E4/ORBIT schedule       3+ rows, status tracking
+
+  ☐       error_logs       System errors           20+ rows, resolved flag
+
+  ☐       system_config    Runtime config          orbit_mode, platform tokens
+
+  ☐       api_costs        Cost tracking           Real token counts
+  ------- ---------------- ----------------------- -----------------------------
+
+2.2 Database Credentials
+
+  ------- ------------------ ------------------------------------------------
+  **☐**   **Parameter**      **Value**
+
+  ☐       Host               localhost:5432 (Docker: postgres container)
+
+  ☐       Database           corpfit_db
+
+  ☐       User               corpfit
+
+  ☐       Password           corpfit123
+
+  ☐       Connection via n8n Postgres account credential (q7zxG97pdUIHmNnO)
+  ------- ------------------ ------------------------------------------------
+
+2.3 Backup Verification
+
+  ------- ---------------------------- -------------------------------------
+  **☐**   **Check**                    **Details**
+
+  ☐       Backup Manager workflow      QUANTUM Backup Manager v1 (zrDU8KXe)
+          active                       
+
+  ☐       Schedule                     Daily (every 24 hours)
+
+  ☐       Telegram report sent         Database snapshot + workflow count +
+                                       service health
+
+  ☐       Manual backup tested         pg_dump via Docker exec
+  ------- ---------------------------- -------------------------------------
+
+3\. Workflow Verification (15 Active)
+
+Confirm each active workflow is running with correct triggers and
+connections.
+
+  ------- -------- -------------------- ----------------- ---------------------------------
+  **☐**   **\#**   **Workflow**         **Trigger**       **Key Function**
+
+  ☐       1        E1 Trend Scout v4    Schedule          Discovers trends via RSS/API,
+                                                          creates briefs
+
+  ☐       2        QUANTUM Planner v4   Webhook           Plans content: module, platform,
+                                                          funnel assignment
+
+  ☐       3        Brief Approval       Schedule (30s)    Telegram polling: approvals + 8
+                   Handler v13                            commands
+
+  ☐       4        E2 Content Generator Webhook           AI content + 3 QA gates + cost
+                   v7                                     tracking
+
+  ☐       5        E3 Video Producer v3 Webhook           Video gen via
+                                                          Veo/Kling/HeyGen/Synthesia/Pika
+
+  ☐       6        E4 Scheduler v2      Schedule          Video quality check + ORBIT
+                                                          scheduling
+
+  ☐       7        ORBIT Publisher v1   Schedule (5m) +   Publishes to
+                                        Webhook           TikTok/Instagram/LinkedIn
+
+  ☐       8        Dashboard API v1     Webhook           GET /webhook/dashboard-api ---
+                                                          all stats
+
+  ☐       9        Dashboard Actions v1 Webhook           POST /webhook/dashboard-action
+                                                          --- mutations
+
+  ☐       10       Analytics API v1     Webhook           GET /webhook/analytics-api ---
+                                                          chart data
+
+  ☐       11       Error Logger         Webhook           POST /webhook/error-logger ---
+                                                          logs errors
+
+  ☐       12       Stale Brief Check    Schedule          Finds old pending briefs, alerts
+                                                          Telegram
+
+  ☐       13       System Health Check  Webhook           POST /webhook/health-check ---
+                                                          full check
+
+  ☐       14       QUANTUM Backup       Schedule (24h)    Daily system snapshot + Telegram
+                   Manager v1                             report
+
+  ☐       15       QUANTUM Watchdog v1  Schedule (10m)    Service monitoring, alerts on
+                                                          failures
+  ------- -------- -------------------- ----------------- ---------------------------------
+
+4\. API Keys & Credentials
+
+  ------- -------------------- --------------------- ------------------------
+  **☐**   **Service**          **Key Location**      **Status**
+
+  ☐       Anthropic API        n8n Code nodes        Active ---
+          (Claude)                                   sk-ant-api03-\...
+
+  ☐       fal.ai (Kling video) n8n Code nodes        Active --- 909a576d-\...
+
+  ☐       Telegram Bot         n8n Code nodes        Active ---
+                                                     8503417924:AAF\...
+
+  ☐       Cloudflare Workers   wrangler CLI          Active --- xrAne5nT\...
+
+  ☐       TikTok API           system_config         PENDING_SETUP
+
+  ☐       Instagram/Facebook   system_config         PENDING_SETUP
+          API                                        
+
+  ☐       LinkedIn Marketing   system_config         PENDING_SETUP
+          API                                        
+  ------- -------------------- --------------------- ------------------------
+
+5\. Monitoring & Alerting
+
+5.1 Watchdog (Automated)
+
+  ------- ------------------ ------------------ ------------------------------
+  **☐**   **Monitor**        **Frequency**      **Alert Condition**
+
+  ☐       Service health     Every 10 min       Any service unreachable
+
+  ☐       Error count        Every 10 min       Unresolved errors \>= 10
+
+  ☐       Failed ORBIT posts Every 10 min       Any failed posts
+
+  ☐       Stale pipeline     Daily              No new content in 48 hours
+  ------- ------------------ ------------------ ------------------------------
+
+5.2 Telegram Commands
+
+  ------- ------------------------- -----------------------------------------
+  **☐**   **Command**               **Function**
+
+  ☐       /status                   Full system health check
+
+  ☐       /stale                    Check for stale/stuck briefs
+
+  ☐       /backup                   Backup system status
+
+  ☐       /orbit_status             ORBIT publishing queue summary
+
+  ☐       /orbit_queue              Detailed queue item listing
+
+  ☐       /orbit_mode               View/change ORBIT publishing mode
+          \[manual\|semi\|auto\]    
+
+  ☐       /help                     List all available commands
+  ------- ------------------------- -----------------------------------------
+
+6\. Recovery Procedures
+
+6.1 Service Restart
+
+If a Docker container goes down, it should auto-restart (unless-stopped
+policy). For manual intervention:
+
+  ------------------ ------------------------- ---------------------------
+  **Scenario**       **Command**               **Notes**
+
+  Restart all        docker compose restart    From \~/CorpFit/ directory
+  services                                     
+
+  Restart single     docker restart            e.g., docker restart n8n
+  service            \<container_name\>        
+
+  n8n workflows      docker restart n8n        Workflows auto-reactivate
+  stuck                                        on startup
+
+  Tunnel down        sudo systemctl restart    Auto-reconnects with UUID
+                     cloudflared               91611db9
+
+  Full system reboot sudo reboot               All services auto-start via
+                                               Docker + systemd
+  ------------------ ------------------------- ---------------------------
+
+6.2 Database Recovery
+
+  ---------- ----------------------- ------------------------------------------
+  **Step**   **Action**              **Command**
+
+  1          Create backup           docker exec postgres pg_dump -U corpfit
+                                     corpfit_db \> backup.sql
+
+  2          Restore from backup     docker exec -i postgres psql -U corpfit
+                                     corpfit_db \< backup.sql
+
+  3          Verify table counts     Use /status Telegram command or dashboard
+
+  4          Test E2 pipeline        Trigger QUANTUM planner with test brief
+  ---------- ----------------------- ------------------------------------------
+
+6.3 Workflow Recovery
+
+If n8n workflows become corrupted or need to be restored:
+
+  ---------- -----------------------------------------------------------------
+  **Step**   **Action**
+
+  1          Login to n8n.corpfit.cloud with admin credentials
+
+  2          Check workflow list --- confirm 15 active workflows
+
+  3          For missing workflows: import from backup JSON files
+
+  4          Verify webhook endpoints: /webhook/dashboard-api,
+             /webhook/dashboard-action, etc.
+
+  5          Test Telegram bot: send /status command
+
+  6          Run test E1→E2→E3 pipeline with a single brief
+  ---------- -----------------------------------------------------------------
+
+7\. Security Checklist
+
+  ------- -------------------------------- ----------------------------------
+  **☐**   **Item**                         **Status**
+
+  ☐       Dashboard requires login         Implemented via cookie auth
+          (user/pass)                      
+
+  ☐       n8n requires login (email/pass)  skahoush2@outlook.com
+
+  ☐       API keys not exposed in          Keys only in n8n Code nodes
+          dashboard HTML                   
+
+  ☐       PostgreSQL not exposed           Only via Docker internal network
+          externally                       
+
+  ☐       Cloudflare SSL/TLS enabled       Full (strict) mode
+
+  ☐       Telegram bot token secured       Only in n8n workflows
+
+  ☐       Dashboard Actions requires auth  Prevents unauthorized SQL
+          cookie                           
+  ------- -------------------------------- ----------------------------------
+
+8\. Go-Live Checklist
+
+Final verification before declaring the system production-ready:
+
+  ------- ------------------------- -----------------------------------------
+  **☐**   **Check**                 **How to Verify**
+
+  ☐       All 15 workflows active   n8n.corpfit.cloud → Workflows list
+
+  ☐       Dashboard loads correctly dashboard.corpfit.cloud → 5 tabs visible
+
+  ☐       Analytics page works      dashboard.corpfit.cloud/analytics → 5
+                                    charts
+
+  ☐       ORBIT tab shows data      Dashboard → ORBIT tab → stat cards +
+                                    table
+
+  ☐       Telegram /status works    Send /status → get health report
+
+  ☐       Telegram /help works      Send /help → get command list
+
+  ☐       E1 discovering trends     Trends count increasing in dashboard
+
+  ☐       Briefs generating         Brief count increasing, Telegram previews
+                                    arriving
+
+  ☐       Approve/Reject buttons    Tap Approve → E2 triggers → content
+          work                      generated
+
+  ☐       E2 content passes QA      QA: approved in Telegram preview
+
+  ☐       E3 video generation works Video URL populated in publish_logs
+
+  ☐       E4 scheduling works       Schedule_logs entries created on publish
+                                    action
+
+  ☐       ORBIT Publisher runs      Queued → Published status transition
+
+  ☐       Watchdog silent when      No alerts if system is running normally
+          healthy                   
+
+  ☐       Backup Manager reports    Daily Telegram report with system
+                                    snapshot
+
+  ☐       Cost tracking accurate    content_logs.total_cost populated for
+                                    each piece
+
+  ☐       Error logger capturing    Error count visible in dashboard
+
+  ☐       Team access verified      Bashar + Ammar can reach dashboard and
+                                    Telegram
+  ------- ------------------------- -----------------------------------------
+
+**QUANTUM AI --- Production Ready**
+
+15 workflows \| 8 Telegram commands \| Automated backup & monitoring

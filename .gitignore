@@ -1,0 +1,17 @@
+# Credentials — NEVER commit
+.env
+.env.*
+*.env
+credentials/
+secrets/
+
+# Node modules
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.log
